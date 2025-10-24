@@ -33,8 +33,12 @@
 
                     <!-- User Dropdown (mostra solo se loggato) -->
                     <li class="nav-item dropdown" *ngIf="authService.isAuthenticated">
-                        <a class="nav-link dropdown-toggle user-dropdown" href="#" id="userDropdown"
-                           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle user-dropdown"
+                           id="userDropdown"
+                           role="button"
+                           data-bs-toggle="dropdown"
+                           aria-expanded="false"
+                           style="cursor: pointer;">
                             <i class="bi bi-person-circle"></i>
                             <span class="user-name">{{ currentUser?.email || getUserDisplayName() }}</span>
                         </a>
@@ -50,7 +54,7 @@
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <a class="dropdown-item" href="#" (click)="logout(); $event.preventDefault()">
+                                <a class="dropdown-item" (click)="logout(); $event.preventDefault()" style="cursor: pointer;">
                                     <i class="bi bi-box-arrow-right"></i>
                                     Logout
                                 </a>

@@ -1,23 +1,25 @@
 import { Component, Input, OnChanges, SimpleChanges, ViewChild, TemplateRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Floor, Desk } from '../../models/floor.model';
-import { BookingType, CreateBookingRequest } from '../../models/booking.model';
+import { Booking, BookingType, CreateBookingRequest } from '../../models/booking.model';
 import { DeskService } from '../../services/desk.service';
 import { BookingService } from '../../services/booking.service';
 import { AuthService } from '../../services/auth.service';
-import { NgbTooltipModule, NgbModal, NgbModalRef, NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbTooltipModule, NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 
 interface DeskPosition {
     desk: Desk;
     x: number;
     y: number;
     available: boolean;
+    bookedByCurrentUser?: boolean;
+    booking?: Booking;
 }
 
 @Component({
     selector: 'app-floor-map',
     standalone: true,
-    imports: [CommonModule, NgbTooltipModule, NgbModalModule],
+    imports: [CommonModule, NgbTooltipModule],
     templateUrl: './floor-map.component.html',
     styleUrls: ['./floor-map.component.scss']
 })
@@ -26,8 +28,8 @@ export class FloorMapComponent implements OnInit, OnChanges {
     @Input() selectedDate?: Date;
 
     @ViewChild('confirmModal') confirmModal?: TemplateRef<any>;
-    @ViewChild('successModal') successModal?: TemplateRef<any>;
-    @ViewChild('errorModal') errorModal?: TemplateRef<any>;
+    @ViewChild('modifyModal') modifyModal?: TemplateRef<any>;
+    @ViewChild('userInfoModal') userInfoModal?: TemplateRef<any>;
 
     desks: Desk[] = [];
     deskPositions: DeskPosition[] = [];
@@ -35,11 +37,8 @@ export class FloorMapComponent implements OnInit, OnChanges {
     selectedDesk?: Desk;
     modalRef?: NgbModalRef;
     currentUserId: number = 1;
-
-    // Per i modali
-    modalTitle = '';
-    modalMessage = '';
-    modalIcon = '';
+    existingBooking?: Booking;
+    selectedBooking?: Booking;
 
     private floorLayouts: { [key: number]: { [deskNumber: string]: { x: number; y: number } } } = {
         1: this.generateFloor1Layout(),
@@ -75,13 +74,15 @@ export class FloorMapComponent implements OnInit, OnChanges {
         this.loading = true;
         const dateString = this.formatDate(this.selectedDate);
 
+        // Carica postazioni disponibili
         this.deskService.getAvailableDesks(dateString, this.floor.id).subscribe({
             next: (availableDesks) => {
+                // Carica tutte le postazioni del piano
                 this.deskService.getDesksByFloor(this.floor!.id).subscribe({
                     next: (allDesks) => {
                         this.desks = allDesks;
-                        this.buildDeskPositions(availableDesks);
-                        this.loading = false;
+                        // Carica le prenotazioni per questa data e piano
+                        this.loadBookingsForDateAndFloor(dateString, availableDesks);
                     },
                     error: (error) => {
                         console.error('Errore nel caricamento delle postazioni:', error);
@@ -96,7 +97,30 @@ export class FloorMapComponent implements OnInit, OnChanges {
         });
     }
 
-    buildDeskPositions(availableDesks: Desk[]): void {
+    loadBookingsForDateAndFloor(dateString: string, availableDesks: Desk[]): void {
+        if (!this.floor) return;
+
+        this.bookingService.getBookingsForDateAndFloor(dateString, this.floor.id).subscribe({
+            next: (bookings) => {
+                console.log('Prenotazioni caricate:', bookings);
+                // Trova se l'utente ha già una prenotazione per questa data
+                this.existingBooking = bookings.find(b => b.userId === this.currentUserId);
+                if (this.existingBooking) {
+                    console.log('Prenotazione esistente trovata:', this.existingBooking);
+                }
+                this.buildDeskPositions(availableDesks, bookings);
+                this.loading = false;
+            },
+            error: (error) => {
+                console.error('Errore nel caricamento delle prenotazioni:', error);
+                // Fallback: costruisci senza le prenotazioni
+                this.buildDeskPositions(availableDesks, []);
+                this.loading = false;
+            }
+        });
+    }
+
+    buildDeskPositions(availableDesks: Desk[], bookings: Booking[]): void {
         if (!this.floor) return;
 
         const layout = this.floorLayouts[this.floor.floorNumber] || {};
@@ -105,12 +129,16 @@ export class FloorMapComponent implements OnInit, OnChanges {
         this.desks.forEach(desk => {
             const position = layout[desk.deskNumber] || this.getDefaultPosition(desk.deskNumber);
             const isAvailable = availableDesks.some(d => d.id === desk.id);
+            const booking = bookings.find(b => b.deskId === desk.id);
+            const bookedByCurrentUser = booking?.userId === this.currentUserId;
 
             this.deskPositions.push({
                 desk,
                 x: position.x,
                 y: position.y,
-                available: isAvailable
+                available: isAvailable,
+                bookedByCurrentUser,
+                booking
             });
         });
 
@@ -118,21 +146,47 @@ export class FloorMapComponent implements OnInit, OnChanges {
     }
 
     onDeskClick(deskPosition: DeskPosition): void {
+        // Se la postazione è occupata, mostra le info dell'utente
         if (!deskPosition.available) {
+            if (deskPosition.booking) {
+                this.selectedBooking = deskPosition.booking;
+                this.openUserInfoModal();
+            }
             return;
         }
 
-        this.selectedDesk = deskPosition.desk;
-        console.log("SELECTED DESK:", this.selectedDesk);
-        this.openConfirmBookingModal();
+        // Se l'utente ha già una prenotazione per questa data
+        if (this.existingBooking) {
+            // Se sta cliccando sulla sua postazione, non fare nulla
+            if (this.existingBooking.deskId === deskPosition.desk.id) {
+                alert('Hai già prenotato questa postazione per questa data!');
+                return;
+            }
+            // Altrimenti apri il modale di modifica
+            this.selectedDesk = deskPosition.desk;
+            this.openModifyModal();
+        } else {
+            // Nessuna prenotazione esistente, apri il modale di conferma normale
+            this.selectedDesk = deskPosition.desk;
+            this.openConfirmModal();
+        }
     }
 
-    openConfirmBookingModal(): void {
-        if (!this.confirmModal) return;
-
+    openConfirmModal(): void {
         this.modalRef = this.modalService.open(this.confirmModal, {
-            centered: true,
-            backdrop: 'static'
+            centered: true
+        });
+    }
+
+    openModifyModal(): void {
+        this.modalRef = this.modalService.open(this.modifyModal, {
+            centered: true
+        });
+    }
+
+    openUserInfoModal(): void {
+        this.modalRef = this.modalService.open(this.userInfoModal, {
+            centered: true
         });
     }
 
@@ -140,7 +194,8 @@ export class FloorMapComponent implements OnInit, OnChanges {
         if (!this.selectedDesk || !this.selectedDate) return;
 
         if (!this.authService.isAuthenticated) {
-            this.showError('Devi essere autenticato per prenotare una postazione');
+            alert('Devi essere autenticato per prenotare una postazione');
+            this.modalRef?.close();
             return;
         }
 
@@ -155,14 +210,50 @@ export class FloorMapComponent implements OnInit, OnChanges {
         this.bookingService.createBooking(this.currentUserId, request).subscribe({
             next: (booking) => {
                 console.log('Prenotazione creata con successo:', booking);
+                alert('Prenotazione effettuata con successo!');
                 this.modalRef?.close();
-                this.showSuccess('Prenotazione effettuata con successo!');
                 this.loadDesks();
             },
             error: (error) => {
                 console.error('Errore nella prenotazione:', error);
-                this.modalRef?.close();
-                this.showError('Errore nella creazione della prenotazione. Riprova.');
+                alert(error?.message);
+            }
+        });
+    }
+
+    confirmModifyBooking(): void {
+        if (!this.selectedDesk || !this.selectedDate || !this.existingBooking) return;
+
+        // Cancella la prenotazione esistente
+        this.bookingService.cancelBooking(this.existingBooking.id, {
+            cancellationReason: 'Modifica postazione'
+        }).subscribe({
+            next: () => {
+                console.log('Prenotazione precedente cancellata');
+                // Crea la nuova prenotazione
+                const request: CreateBookingRequest = {
+                    deskId: this.selectedDesk!.id,
+                    bookingDate: this.formatDate(this.selectedDate!),
+                    type: BookingType.FULL_DAY
+                };
+
+                this.bookingService.createBooking(this.currentUserId, request).subscribe({
+                    next: (booking) => {
+                        console.log('Nuova prenotazione creata con successo:', booking);
+                        alert('Prenotazione modificata con successo!');
+                        this.modalRef?.close();
+                        this.existingBooking = undefined;
+                        this.loadDesks();
+                    },
+                    error: (error) => {
+                        console.error('Errore nella creazione della nuova prenotazione:', error);
+                        alert(error?.message);
+                    }
+                });
+            },
+            error: (error) => {
+                console.error('Errore nella cancellazione della prenotazione precedente:', error);
+                alert(error?.message);
             }
         });
     }
@@ -172,37 +263,22 @@ export class FloorMapComponent implements OnInit, OnChanges {
         this.modalRef?.close();
     }
 
-    showSuccess(message: string): void {
-        this.modalTitle = 'Operazione completata';
-        this.modalMessage = message;
-        this.modalIcon = 'bi-check-circle-fill text-success';
-        if (this.successModal) {
-            this.modalRef = this.modalService.open(this.successModal, {
-                centered: true
-            });
-        }
-    }
-
-    showError(message: string): void {
-        this.modalTitle = 'Errore';
-        this.modalMessage = message;
-        this.modalIcon = 'bi-x-circle-fill text-danger';
-        if (this.errorModal) {
-            this.modalRef = this.modalService.open(this.errorModal, {
-                centered: true
-            });
-        }
-    }
-
     closeModal(): void {
+        this.selectedBooking = undefined;
         this.modalRef?.close();
     }
 
     getDeskClass(deskPosition: DeskPosition): string {
+        if (deskPosition.bookedByCurrentUser) {
+            return 'desk-my-booking';
+        }
         return deskPosition.available ? 'desk-available' : 'desk-occupied';
     }
 
     getDeskTooltip(deskPosition: DeskPosition): string {
+        if (deskPosition.bookedByCurrentUser) {
+            return `${deskPosition.desk.deskNumber} - La tua prenotazione`;
+        }
         const status = deskPosition.available ? 'Disponibile' : 'Occupata';
         return `${deskPosition.desk.deskNumber} - ${status}`;
     }
@@ -309,9 +385,8 @@ export class FloorMapComponent implements OnInit, OnChanges {
     }
 
     // ============================================================================
-    // LAYOUT PIANO 3 - 80 POSTAZIONI
-    // ViewBox: 1200x848 (aspect ratio 1.414 - CORRETTO)
-    // Formula: svgX = (x_px / 3509) * 1200, svgY = (y_px / 2481) * 848
+    // LAYOUT PIANO 3 - 40 POSTAZIONI
+    // ViewBox: 1200x848
     // ============================================================================
     private generateFloor3Layout(): { [deskNumber: string]: { x: number; y: number } } {
         const layout: { [deskNumber: string]: { x: number; y: number } } = {};
