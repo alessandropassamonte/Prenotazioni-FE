@@ -1,50 +1,103 @@
-<div class="login-container">
-    <h2>Login</h2>
-
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-        <div class="form-group">
-            <label for="email">Email</label>
-            <input
-                    type="email"
-                    id="email"
-                    formControlName="email"
-                    class="form-control"
-                    [class.is-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
-            />
-            <div class="invalid-feedback" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
-                Inserisci un'email valida
+<div class="auth-page-container">
+    <!-- Hero Section -->
+    <div class="auth-hero">
+        <div class="container">
+            <div class="hero-content text-center">
+                <h1 class="hero-title">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    Bentornato!
+                </h1>
+                <p class="hero-subtitle">Accedi al tuo account per prenotare le postazioni</p>
             </div>
         </div>
+    </div>
 
-        <div class="form-group">
-            <label for="password">Password</label>
-            <input
-                    type="password"
-                    id="password"
-                    formControlName="password"
-                    class="form-control"
-                    [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
-            />
-            <div class="invalid-feedback" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
-                La password è obbligatoria
+    <!-- Form Section -->
+    <div class="auth-form-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-6 col-lg-5">
+                    <div class="auth-card">
+                        <div class="auth-card-header">
+                            <h3>Login</h3>
+                            <p class="text-muted">Inserisci le tue credenziali</p>
+                        </div>
+
+                        <div class="auth-card-body">
+                            <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+                                <!-- Email -->
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">
+                                        <i class="bi bi-envelope"></i> Email
+                                    </label>
+                                    <input
+                                            type="email"
+                                            id="email"
+                                            formControlName="email"
+                                            class="form-control"
+                                            [class.is-invalid]="f['email'].invalid && f['email'].touched"
+                                            placeholder="nome@esempio.it"
+                                    />
+                                    <div class="invalid-feedback" *ngIf="f['email'].invalid && f['email'].touched">
+                                        <span *ngIf="f['email'].errors?.['required']">L'email è obbligatoria</span>
+                                        <span *ngIf="f['email'].errors?.['email']">Inserisci un'email valida</span>
+                                    </div>
+                                </div>
+
+                                <!-- Password -->
+                                <div class="mb-4">
+                                    <label for="password" class="form-label">
+                                        <i class="bi bi-lock"></i> Password
+                                    </label>
+                                    <input
+                                            type="password"
+                                            id="password"
+                                            formControlName="password"
+                                            class="form-control"
+                                            [class.is-invalid]="f['password'].invalid && f['password'].touched"
+                                            placeholder="La tua password"
+                                    />
+                                    <div class="invalid-feedback" *ngIf="f['password'].invalid && f['password'].touched">
+                                        <span *ngIf="f['password'].errors?.['required']">La password è obbligatoria</span>
+                                        <span *ngIf="f['password'].errors?.['minlength']">La password deve contenere almeno 6 caratteri</span>
+                                    </div>
+                                </div>
+
+                                <!-- Error Message -->
+                                <div class="alert alert-danger" *ngIf="error" role="alert">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    {{ error }}
+                                </div>
+
+                                <!-- Submit Button -->
+                                <button
+                                        type="submit"
+                                        class="btn btn-primary w-100 btn-lg"
+                                        [disabled]="loading"
+                                >
+                  <span *ngIf="!loading">
+                    <i class="bi bi-box-arrow-in-right"></i> Accedi
+                  </span>
+                                    <span *ngIf="loading">
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    Accesso in corso...
+                  </span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Register Link -->
+                        <div class="auth-card-footer">
+                            <p class="text-center mb-0">
+                                Non hai un account?
+                                <a routerLink="/register" class="register-link">
+                                    <i class="bi bi-person-plus"></i> Registrati ora
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-
-        <div class="error-message" *ngIf="error">
-            {{ error }}
-        </div>
-
-        <button
-                type="submit"
-                class="btn btn-primary"
-                [disabled]="loginForm.invalid || loading"
-        >
-            <span *ngIf="!loading">Login</span>
-            <span *ngIf="loading">Caricamento...</span>
-        </button>
-    </form>
-
-    <div class="register-link">
-        Non hai un account? <a routerLink="/register">Registrati</a>
     </div>
 </div>

@@ -1,0 +1,244 @@
+<div class="auth-page-container">
+    <!-- Hero Section -->
+    <div class="auth-hero">
+        <div class="container">
+            <div class="hero-content text-center">
+                <h1 class="hero-title">
+                    <i class="bi bi-person-plus-fill"></i>
+                    Crea il tuo Account
+                </h1>
+                <p class="hero-subtitle">Inizia a prenotare le tue postazioni oggi stesso</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Section -->
+    <div class="auth-form-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8 col-lg-7">
+                    <div class="auth-card">
+                        <div class="auth-card-header">
+                            <h3>Registrazione</h3>
+                            <p class="text-muted">Compila il form per creare il tuo account</p>
+                        </div>
+
+                        <div class="auth-card-body">
+                            <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+                                <div class="row">
+                                    <!-- Nome -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="firstName" class="form-label">
+                                            <i class="bi bi-person"></i> Nome *
+                                        </label>
+                                        <input
+                                                type="text"
+                                                id="firstName"
+                                                formControlName="firstName"
+                                                class="form-control"
+                                                [class.is-invalid]="f['firstName'].invalid && f['firstName'].touched"
+                                                placeholder="Mario"
+                                        />
+                                        <div class="invalid-feedback" *ngIf="f['firstName'].invalid && f['firstName'].touched">
+                                            <span *ngIf="f['firstName'].errors?.['required']">Il nome è obbligatorio</span>
+                                            <span *ngIf="f['firstName'].errors?.['minlength']">Il nome deve contenere almeno 2 caratteri</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Cognome -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="lastName" class="form-label">
+                                            <i class="bi bi-person"></i> Cognome *
+                                        </label>
+                                        <input
+                                                type="text"
+                                                id="lastName"
+                                                formControlName="lastName"
+                                                class="form-control"
+                                                [class.is-invalid]="f['lastName'].invalid && f['lastName'].touched"
+                                                placeholder="Rossi"
+                                        />
+                                        <div class="invalid-feedback" *ngIf="f['lastName'].invalid && f['lastName'].touched">
+                                            <span *ngIf="f['lastName'].errors?.['required']">Il cognome è obbligatorio</span>
+                                            <span *ngIf="f['lastName'].errors?.['minlength']">Il cognome deve contenere almeno 2 caratteri</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Email -->
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">
+                                        <i class="bi bi-envelope"></i> Email *
+                                    </label>
+                                    <input
+                                            type="email"
+                                            id="email"
+                                            formControlName="email"
+                                            class="form-control"
+                                            [class.is-invalid]="f['email'].invalid && f['email'].touched"
+                                            placeholder="nome@esempio.it"
+                                    />
+                                    <div class="invalid-feedback" *ngIf="f['email'].invalid && f['email'].touched">
+                                        <span *ngIf="f['email'].errors?.['required']">L'email è obbligatoria</span>
+                                        <span *ngIf="f['email'].errors?.['email']">Inserisci un'email valida</span>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <!-- Password -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="password" class="form-label">
+                                            <i class="bi bi-lock"></i> Password *
+                                        </label>
+                                        <input
+                                                type="password"
+                                                id="password"
+                                                formControlName="password"
+                                                class="form-control"
+                                                [class.is-invalid]="f['password'].invalid && f['password'].touched"
+                                                placeholder="Min. 6 caratteri"
+                                        />
+                                        <div class="invalid-feedback" *ngIf="f['password'].invalid && f['password'].touched">
+                                            <span *ngIf="f['password'].errors?.['required']">La password è obbligatoria</span>
+                                            <span *ngIf="f['password'].errors?.['minlength']">La password deve contenere almeno 6 caratteri</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Conferma Password -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="confirmPassword" class="form-label">
+                                            <i class="bi bi-lock-fill"></i> Conferma Password *
+                                        </label>
+                                        <input
+                                                type="password"
+                                                id="confirmPassword"
+                                                formControlName="confirmPassword"
+                                                class="form-control"
+                                                [class.is-invalid]="f['confirmPassword'].invalid && f['confirmPassword'].touched"
+                                                placeholder="Ripeti la password"
+                                        />
+                                        <div class="invalid-feedback" *ngIf="f['confirmPassword'].invalid && f['confirmPassword'].touched">
+                                            <span *ngIf="f['confirmPassword'].errors?.['required']">Conferma la password</span>
+                                            <span *ngIf="f['confirmPassword'].errors?.['passwordMismatch']">Le password non coincidono</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Divider -->
+                                <hr class="my-4">
+                                <h5 class="mb-3 text-muted">
+                                    <i class="bi bi-info-circle"></i> Informazioni Aggiuntive (Opzionali)
+                                </h5>
+
+                                <div class="row">
+                                    <!-- Employee ID -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="employeeId" class="form-label">
+                                            <i class="bi bi-badge-tm"></i> ID Dipendente
+                                        </label>
+                                        <input
+                                                type="text"
+                                                id="employeeId"
+                                                formControlName="employeeId"
+                                                class="form-control"
+                                                placeholder="Es: EMP001"
+                                        />
+                                    </div>
+
+                                    <!-- Phone Number -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="phoneNumber" class="form-label">
+                                            <i class="bi bi-telephone"></i> Telefono
+                                        </label>
+                                        <input
+                                                type="tel"
+                                                id="phoneNumber"
+                                                formControlName="phoneNumber"
+                                                class="form-control"
+                                                [class.is-invalid]="f['phoneNumber'].invalid && f['phoneNumber'].touched"
+                                                placeholder="+39 123 456 7890"
+                                        />
+                                        <div class="invalid-feedback" *ngIf="f['phoneNumber'].invalid && f['phoneNumber'].touched">
+                                            <span *ngIf="f['phoneNumber'].errors?.['pattern']">Numero di telefono non valido</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <!-- Work Type -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="workType" class="form-label">
+                                            <i class="bi bi-briefcase"></i> Tipo Lavoro
+                                        </label>
+                                        <select
+                                                id="workType"
+                                                formControlName="workType"
+                                                class="form-select"
+                                        >
+                                            <option *ngFor="let type of workTypes" [value]="type.value">
+                                                {{ type.label }}
+                                            </option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Role -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="role" class="form-label">
+                                            <i class="bi bi-person-badge"></i> Ruolo
+                                        </label>
+                                        <select
+                                                id="role"
+                                                formControlName="role"
+                                                class="form-select"
+                                        >
+                                            <option *ngFor="let role of roles" [value]="role.value">
+                                                {{ role.label }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Success Message -->
+                                <div class="alert alert-success" *ngIf="success" role="alert">
+                                    <i class="bi bi-check-circle"></i>
+                                    Registrazione completata con successo! Reindirizzamento in corso...
+                                </div>
+
+                                <!-- Error Message -->
+                                <div class="alert alert-danger" *ngIf="error" role="alert">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    {{ error }}
+                                </div>
+
+                                <!-- Submit Button -->
+                                <button
+                                        type="submit"
+                                        class="btn btn-primary w-100 btn-lg mt-3"
+                                        [disabled]="loading"
+                                >
+                  <span *ngIf="!loading">
+                    <i class="bi bi-person-plus"></i> Registrati
+                  </span>
+                                    <span *ngIf="loading">
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    Registrazione in corso...
+                  </span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Login Link -->
+                        <div class="auth-card-footer">
+                            <p class="text-center mb-0">
+                                Hai già un account?
+                                <a routerLink="/login" class="login-link">
+                                    <i class="bi bi-box-arrow-in-right"></i> Accedi
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
