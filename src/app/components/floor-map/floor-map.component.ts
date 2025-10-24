@@ -39,6 +39,8 @@ export class FloorMapComponent implements OnInit, OnChanges {
     currentUserId: number = 1;
     existingBooking?: Booking;
     selectedBooking?: Booking;
+    availableDesks: number = 0;
+    occupiedDesks: number = 0;
 
     private floorLayouts: { [key: number]: { [deskNumber: string]: { x: number; y: number } } } = {
         1: this.generateFloor1Layout(),
@@ -74,25 +76,55 @@ export class FloorMapComponent implements OnInit, OnChanges {
         this.loading = true;
         const dateString = this.formatDate(this.selectedDate);
 
-        // Carica postazioni disponibili
-        this.deskService.getAvailableDesks(dateString, this.floor.id).subscribe({
-            next: (availableDesks) => {
-                // Carica tutte le postazioni del piano
-                this.deskService.getDesksByFloor(this.floor!.id).subscribe({
-                    next: (allDesks) => {
-                        this.desks = allDesks;
-                        // Carica le prenotazioni per questa data e piano
-                        this.loadBookingsForDateAndFloor(dateString, availableDesks);
+        // PRIMA: Controlla se l'utente ha già una prenotazione per questa data (su qualsiasi piano)
+        this.bookingService.getUserUpcomingBookings(this.currentUserId).subscribe({
+            next: (userBookings) => {
+                // Filtra per la data selezionata
+                this.existingBooking = userBookings.find(b => b.bookingDate === dateString);
+
+                if (this.existingBooking) {
+                    console.log('Prenotazione esistente trovata per questa data:', this.existingBooking);
+                    console.log('Piano prenotazione:', this.existingBooking.floorId, '- Piano corrente:', this.floor!.id);
+                }
+
+                // POI: Carica le postazioni disponibili
+                this.deskService.getAvailableDesks(dateString, this.floor!.id).subscribe({
+                    next: (availableDesks) => {
+                        this.availableDesks = availableDesks.length;
+                        // Carica tutte le postazioni del piano
+                        this.deskService.getDesksByFloor(this.floor!.id).subscribe({
+                            next: (allDesks) => {
+                                this.desks = allDesks;
+                                // Carica le prenotazioni per questo piano (per mostrare le postazioni occupate)
+                                this.loadBookingsForDateAndFloor(dateString, availableDesks);
+                            },
+                            error: (error) => {
+                                console.error('Errore nel caricamento delle postazioni:', error);
+                                this.loading = false;
+                            }
+                        });
                     },
                     error: (error) => {
-                        console.error('Errore nel caricamento delle postazioni:', error);
+                        console.error('Errore nel caricamento della disponibilità:', error);
                         this.loading = false;
                     }
                 });
             },
             error: (error) => {
-                console.error('Errore nel caricamento della disponibilità:', error);
-                this.loading = false;
+                console.error('Errore nel caricamento delle prenotazioni utente:', error);
+                // Continua comunque con il caricamento del piano
+                this.existingBooking = undefined;
+
+                this.deskService.getAvailableDesks(dateString, this.floor!.id).subscribe({
+                    next: (availableDesks) => {
+                        this.deskService.getDesksByFloor(this.floor!.id).subscribe({
+                            next: (allDesks) => {
+                                this.desks = allDesks;
+                                this.loadBookingsForDateAndFloor(dateString, availableDesks);
+                            }
+                        });
+                    }
+                });
             }
         });
     }
@@ -102,12 +134,9 @@ export class FloorMapComponent implements OnInit, OnChanges {
 
         this.bookingService.getBookingsForDateAndFloor(dateString, this.floor.id).subscribe({
             next: (bookings) => {
-                console.log('Prenotazioni caricate:', bookings);
-                // Trova se l'utente ha già una prenotazione per questa data
-                this.existingBooking = bookings.find(b => b.userId === this.currentUserId);
-                if (this.existingBooking) {
-                    console.log('Prenotazione esistente trovata:', this.existingBooking);
-                }
+                this.occupiedDesks = bookings.length
+                console.log('Prenotazioni del piano caricate:', bookings);
+                // NON cercare più existingBooking qui - è già stato caricato in loadDesks()
                 this.buildDeskPositions(availableDesks, bookings);
                 this.loading = false;
             },
@@ -215,7 +244,7 @@ export class FloorMapComponent implements OnInit, OnChanges {
                 this.loadDesks();
             },
             error: (error) => {
-                console.error('Errore nella prenotazione:', error);
+                console.log( error);
                 alert(error?.message);
             }
         });
@@ -268,11 +297,13 @@ export class FloorMapComponent implements OnInit, OnChanges {
         this.modalRef?.close();
     }
 
-    getDeskClass(deskPosition: DeskPosition): string {
-        if (deskPosition.bookedByCurrentUser) {
-            return 'desk-my-booking';
-        }
-        return deskPosition.available ? 'desk-available' : 'desk-occupied';
+    getDeskClass(deskPosition: DeskPosition): { [key: string]: boolean } {
+        return {
+            'desk-circle': true,
+            'desk-my-booking': deskPosition.bookedByCurrentUser === true,
+            'desk-available': !deskPosition.bookedByCurrentUser && deskPosition.available,
+            'desk-occupied': !deskPosition.bookedByCurrentUser && !deskPosition.available
+        };
     }
 
     getDeskTooltip(deskPosition: DeskPosition): string {

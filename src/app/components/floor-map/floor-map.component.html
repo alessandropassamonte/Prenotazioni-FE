@@ -9,11 +9,11 @@
                 <div class="legend">
                     <div class="legend-item">
                         <div class="legend-color available"></div>
-                        <span>Disponibile</span>
+                        <span>Disponibile ({{availableDesks}})</span>
                     </div>
                     <div class="legend-item">
                         <div class="legend-color occupied"></div>
-                        <span>Occupata</span>
+                        <span>Occupata ({{occupiedDesks }})</span>
                     </div>
                     <div class="legend-item">
                         <div class="legend-color my-booking"></div>
@@ -222,18 +222,6 @@
             <div class="info-row">
                 <span class="info-label">Data:</span>
                 <span class="info-value">{{ selectedBooking?.bookingDate | date: 'dd/MM/yyyy' }}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Tipo:</span>
-                <span class="info-value">
-                    <span class="badge bg-primary">{{ selectedBooking?.type || 'N/A' }}</span>
-                </span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Stato:</span>
-                <span class="info-value">
-                    <span class="badge bg-success">{{ selectedBooking?.status || 'N/A' }}</span>
-                </span>
             </div>
             <div *ngIf="selectedBooking?.notes" class="info-row">
                 <span class="info-label">Note:</span>

@@ -30,6 +30,12 @@
                             Le Mie Prenotazioni
                         </a>
                     </li>
+                    <li *ngIf="authService.isAuthenticated" class="nav-item">
+                        <a class="nav-link" routerLink="/admin/holidays" routerLinkActive="active">
+                            <i class="bi bi-calendar-check"></i>
+                            Gestione Chiusure
+                        </a>
+                    </li>
 
                     <!-- User Dropdown (mostra solo se loggato) -->
                     <li class="nav-item dropdown" *ngIf="authService.isAuthenticated">
