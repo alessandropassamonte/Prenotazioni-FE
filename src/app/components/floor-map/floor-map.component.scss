@@ -161,6 +161,10 @@
 
       .desk-group {
         pointer-events: all;
+
+        &.hidden {
+          display: none;
+        }
       }
 
       .desk-circle {

@@ -1,5 +1,6 @@
 import { Component, Input, OnChanges, SimpleChanges, ViewChild, TemplateRef, OnInit, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Floor, Desk } from '../../models/floor.model';
 import { Booking, BookingType, CreateBookingRequest } from '../../models/booking.model';
 import { DeskService } from '../../services/desk.service';
@@ -20,7 +21,7 @@ interface DeskPosition {
 @Component({
     selector: 'app-floor-map',
     standalone: true,
-    imports: [CommonModule, NgbTooltipModule],
+    imports: [CommonModule, NgbTooltipModule, FormsModule],
     templateUrl: './floor-map.component.html',
     styleUrls: ['./floor-map.component.scss']
 })
@@ -43,6 +44,9 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
     selectedBooking?: Booking;
     availableDesks: number = 0;
     occupiedDesks: number = 0;
+
+    // Search filter
+    searchFilter: string = '';
 
     // Zoom and Pan properties
     zoomLevel = 1;
@@ -342,6 +346,28 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
             return `Postazione ${deskPosition.desk.deskNumber} - Disponibile`;
         }
         return `Postazione ${deskPosition.desk.deskNumber}`;
+    }
+
+    // Search Filter Method
+    matchesSearchFilter(deskPosition: DeskPosition): boolean {
+        if (!this.searchFilter || this.searchFilter.trim() === '') {
+            return true; // Mostra tutte le postazioni se non c'è filtro
+        }
+
+        const searchTerm = this.searchFilter.trim().toLowerCase();
+        const notes = deskPosition.desk.notes?.toLowerCase() || '';
+
+        return notes.includes(searchTerm);
+    }
+
+    clearSearch(): void {
+        this.searchFilter = '';
+    }
+
+    onSearchChange(): void {
+        // Metodo chiamato quando il filtro di ricerca cambia
+        // Non è necessario fare nulla qui perché il filtro viene applicato automaticamente
+        // tramite matchesSearchFilter() nel template
     }
 
     // Zoom Methods
