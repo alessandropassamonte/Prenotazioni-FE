@@ -1,67 +1,94 @@
 <div class="app-container">
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container">
-      <a class="navbar-brand" routerLink="/">
-        <i class="bi bi-building"></i>
-        {{ title }}
-      </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
-              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item">
-            <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
-              <i class="bi bi-house-door"></i>
-              Home
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" routerLink="/">
+                <i class="bi bi-building"></i>
+                {{ title }}
             </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" routerLink="/booking" routerLinkActive="active">
-              <i class="bi bi-calendar-plus"></i>
-              Prenota
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" routerLink="/my-bookings" routerLinkActive="active">
-              <i class="bi bi-calendar-check"></i>
-              Le Mie Prenotazioni
-            </a>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </nav>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+                            <i class="bi bi-house-door"></i>
+                            Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" routerLink="/booking" routerLinkActive="active">
+                            <i class="bi bi-calendar-plus"></i>
+                            Prenota
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" routerLink="/my-bookings" routerLinkActive="active">
+                            <i class="bi bi-calendar-check"></i>
+                            Le Mie Prenotazioni
+                        </a>
+                    </li>
 
-  <!-- Main Content -->
-  <main class="main-content">
-    <router-outlet></router-outlet>
-  </main>
+                    <!-- User Dropdown (mostra solo se loggato) -->
+                    <li class="nav-item dropdown" *ngIf="authService.isAuthenticated">
+                        <a class="nav-link dropdown-toggle user-dropdown" href="#" id="userDropdown"
+                           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle"></i>
+                            <span class="user-name">{{ currentUser?.email || getUserDisplayName() }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li>
+                                <div class="dropdown-header">
+                                    <div class="user-info">
+                                        <strong>{{ getUserDisplayName() }}</strong>
+                                        <small class="text-muted d-block">{{ currentUser?.email }}</small>
+                                        <small class="badge bg-secondary mt-1">{{ currentUser?.role }}</small>
+                                    </div>
+                                </div>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="#" (click)="logout(); $event.preventDefault()">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                    Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="container">
-      <div class="row">
-        <div class="col-md-6">
-          <p class="mb-0">
-            <i class="bi bi-building"></i>
-            <strong>{{ title }}</strong>
-          </p>
-          <p class="text-muted small mb-0">
-            Sistema di gestione prenotazioni postazioni di lavoro
-          </p>
+    <!-- Main Content -->
+    <main class="main-content">
+        <router-outlet></router-outlet>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-0">
+                        <i class="bi bi-building"></i>
+                        <strong>{{ title }}</strong>
+                    </p>
+                    <p class="text-muted small mb-0">
+                        Sistema di gestione prenotazioni postazioni di lavoro
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0 text-muted small">
+                        © {{ currentYear }} Company. Tutti i diritti riservati.
+                    </p>
+                    <p class="mb-0 text-muted small">
+                        Versione 1.0.0
+                    </p>
+                </div>
+            </div>
         </div>
-        <div class="col-md-6 text-md-end">
-          <p class="mb-0 text-muted small">
-            © {{ currentYear }} Company. Tutti i diritti riservati.
-          </p>
-          <p class="mb-0 text-muted small">
-            Versione 1.0.0
-          </p>
-        </div>
-      </div>
-    </div>
-  </footer>
+    </footer>
 </div>

@@ -1,9 +1,10 @@
-import { Component, Input, OnChanges, SimpleChanges, ViewChild, TemplateRef } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, ViewChild, TemplateRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Floor, Desk } from '../../models/floor.model';
 import { BookingType, CreateBookingRequest } from '../../models/booking.model';
 import { DeskService } from '../../services/desk.service';
 import { BookingService } from '../../services/booking.service';
+import { AuthService } from '../../services/auth.service';
 import { NgbTooltipModule, NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 
 interface DeskPosition {
@@ -20,10 +21,9 @@ interface DeskPosition {
     templateUrl: './floor-map.component.html',
     styleUrls: ['./floor-map.component.scss']
 })
-export class FloorMapComponent implements OnChanges {
+export class FloorMapComponent implements OnInit, OnChanges {
     @Input() floor?: Floor;
     @Input() selectedDate?: Date;
-    @Input() currentUserId: number = 1; // TODO: Get from auth service
 
     @ViewChild('confirmModal') confirmModal?: TemplateRef<any>;
 
@@ -32,6 +32,7 @@ export class FloorMapComponent implements OnChanges {
     loading = false;
     selectedDesk?: Desk;
     modalRef?: NgbModalRef;
+    currentUserId: number = 1; // Fallback se non autenticato
 
 
     private floorLayouts: { [key: number]: { [deskNumber: string]: { x: number; y: number } } } = {
@@ -42,8 +43,20 @@ export class FloorMapComponent implements OnChanges {
     constructor(
         private deskService: DeskService,
         private bookingService: BookingService,
+        private authService: AuthService,
         private modalService: NgbModal
     ) {}
+
+    ngOnInit(): void {
+        // Ottieni l'userId dall'AuthService
+        const currentUser = this.authService.currentUserValue;
+        if (currentUser) {
+            this.currentUserId = currentUser.id;
+            console.log('UserId ottenuto da AuthService:', this.currentUserId);
+        } else {
+            console.warn('Utente non autenticato, uso userId di fallback');
+        }
+    }
 
     ngOnChanges(changes: SimpleChanges): void {
         if ((changes['floor'] || changes['selectedDate']) && this.floor && this.selectedDate) {
@@ -119,20 +132,32 @@ export class FloorMapComponent implements OnChanges {
     confirmBooking(): void {
         if (!this.selectedDesk || !this.selectedDate) return;
 
+        // Verifica che l'utente sia autenticato
+        if (!this.authService.isAuthenticated) {
+            alert('Devi essere autenticato per prenotare una postazione');
+            this.modalRef?.close();
+            return;
+        }
+
         const request: CreateBookingRequest = {
             deskId: this.selectedDesk.id,
             bookingDate: this.formatDate(this.selectedDate),
             type: BookingType.FULL_DAY
         };
 
+        console.log('Creazione prenotazione con userId:', this.currentUserId);
+        console.log('Request:', request);
+
         this.bookingService.createBooking(this.currentUserId, request).subscribe({
             next: (booking) => {
-                console.log('Prenotazione creata:', booking);
+                console.log('Prenotazione creata con successo:', booking);
+                alert('Prenotazione effettuata con successo!');
                 this.modalRef?.close();
                 this.loadDesks();
             },
             error: (error) => {
                 console.error('Errore nella prenotazione:', error);
+                alert('Errore nella creazione della prenotazione. Riprova.');
             }
         });
     }
@@ -148,7 +173,7 @@ export class FloorMapComponent implements OnChanges {
 
     getDeskTooltip(deskPosition: DeskPosition): string {
         const status = deskPosition.available ? 'Disponibile' : 'Occupata';
-        return `Postazione ${deskPosition.desk.deskNumber} - ${status}`;
+        return `${deskPosition.desk.deskNumber} - ${status}`;
     }
 
     private formatDate(date: Date): string {
@@ -159,10 +184,10 @@ export class FloorMapComponent implements OnChanges {
     }
 
     private getDefaultPosition(deskNumber: string): { x: number; y: number } {
-        const num = parseInt(deskNumber) || 0;
+        const num = parseInt(deskNumber.replace(/\D/g, '')) || 0;
         return {
-            x: 50 + (num % 10) * 80,
-            y: 50 + Math.floor(num / 10) * 80
+            x: 100 + (num % 10) * 80,
+            y: 100 + Math.floor(num / 10) * 80
         };
     }
 

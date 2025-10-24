@@ -43,6 +43,85 @@
         font-weight: 600;
       }
     }
+
+    // Stili per il dropdown utente
+    .user-dropdown {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      .bi-person-circle {
+        font-size: 1.5rem;
+      }
+
+      .user-name {
+        font-weight: 500;
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    .dropdown-menu {
+      border: none;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+      border-radius: 12px;
+      padding: 0.5rem 0;
+      min-width: 250px;
+      margin-top: 0.5rem;
+
+      .dropdown-header {
+        padding: 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px 12px 0 0;
+        margin-bottom: 0.5rem;
+
+        .user-info {
+          strong {
+            font-size: 1rem;
+            display: block;
+            margin-bottom: 0.25rem;
+          }
+
+          small {
+            font-size: 0.85rem;
+          }
+
+          .badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+          }
+        }
+      }
+
+      .dropdown-item {
+        padding: 0.75rem 1rem;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+
+        i {
+          font-size: 1.2rem;
+          width: 20px;
+        }
+
+        &:hover {
+          background-color: rgba(102, 126, 234, 0.1);
+          color: #667eea;
+        }
+
+        &:active {
+          background-color: rgba(102, 126, 234, 0.2);
+        }
+      }
+
+      .dropdown-divider {
+        margin: 0.5rem 0;
+      }
+    }
   }
 
   .main-content {
@@ -72,6 +151,19 @@
     .navbar {
       .nav-link {
         margin: 0.25rem 0;
+      }
+
+      .user-dropdown {
+        .user-name {
+          max-width: none;
+        }
+      }
+
+      .dropdown-menu {
+        position: static !important;
+        transform: none !important;
+        border-radius: 8px;
+        margin: 0.5rem 1rem;
       }
     }
   }
