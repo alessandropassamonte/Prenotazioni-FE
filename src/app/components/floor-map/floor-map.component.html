@@ -30,80 +30,83 @@
             </div>
 
             <div *ngIf="!loading && deskPositions.length > 0" class="map-wrapper">
-                <div class="floor-background"
-                     [style.background-image]="'url(images/piano_' + floor?.floorNumber + '.jpg)'">
+                <!-- Controlli Zoom -->
+                <div class="zoom-controls">
+                    <button class="zoom-btn" (click)="zoomIn()" [disabled]="zoomLevel >= maxZoom" title="Zoom In">
+                        <i class="bi bi-zoom-in"></i>
+                    </button>
+                    <button class="zoom-btn" (click)="zoomOut()" [disabled]="zoomLevel <= minZoom" title="Zoom Out">
+                        <i class="bi bi-zoom-out"></i>
+                    </button>
+                    <button class="zoom-btn" (click)="resetZoom()" [disabled]="zoomLevel === 1" title="Reset Zoom">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                    <span class="zoom-level">{{(zoomLevel * 100).toFixed(0)}}%</span>
                 </div>
 
-                <!--
-                  ⚠️ IMPORTANTE: ViewBox 1200×848 (aspect ratio 1.414)
+                <!-- Contenitore zoomabile -->
+                <div class="zoom-container"
+                     [style.transform]="getTransform()"
+                     [style.transform-origin]="'0 0'">
 
-                  Questo viewBox corrisponde all'aspect ratio dell'immagine (2000×1414 = 1.414)
-                  e garantisce nessuna distorsione delle coordinate.
+                    <div class="floor-background"
+                         [style.background-image]="'url(images/piano_' + floor?.floorNumber + '.jpg)'">
+                    </div>
 
-                  Per implementare ZOOM in futuro:
+                    <!--
+                      ⚠️ ZOOM IMPLEMENTATO
 
-                  1. Opzione semplice - CSS Transform:
-                     .desk-overlay {
-                       transform: scale(1.5);
-                       transform-origin: center;
-                     }
+                      Funzionalità disponibili:
+                      - Rotella del mouse: zoom in/out sul punto del cursore
+                      - Pinch-to-zoom: due dita su smartphone/tablet
+                      - Pan/Drag: trascinare quando zoomato (sia mouse che touch)
+                      - Pulsanti: zoom in, zoom out, reset
 
-                  2. Opzione avanzata - SVG ViewBox dinamico:
-                     [attr.viewBox]="currentViewBox"
-                     // Cambia viewBox per zoom: es. "600 400 600 424" = zoom 2x su centro
+                      ViewBox dinamico per zoom fluido senza distorsioni.
+                    -->
+                    <svg #floorMapSvg
+                         id="floor-map-svg"
+                         class="desk-overlay"
+                         [attr.viewBox]="getViewBox()"
+                         preserveAspectRatio="xMidYMid meet"
+                         (wheel)="onWheel($event)"
+                         (touchstart)="onTouchStart($event)"
+                         (touchmove)="onTouchMove($event)"
+                         (touchend)="onTouchEnd($event)"
+                         (mousedown)="onMouseDown($event)"
+                         (mousemove)="onMouseMove($event)"
+                         (mouseup)="onMouseUp()"
+                         (mouseleave)="onMouseLeave()"
+                         [class.panning]="isPanning">
 
-                  3. Libreria consigliata per mobile:
-                     npm install svg-pan-zoom
-                     import svgPanZoom from 'svg-pan-zoom';
-                     svgPanZoom('#floor-map-svg', { /* options */ });
-                -->
-                <svg id="floor-map-svg"
-                     class="desk-overlay"
-                     viewBox="0 0 1200 848"
-                     preserveAspectRatio="xMidYMid meet">
+                        <!-- Gruppo per ogni postazione -->
+                        <g *ngFor="let deskPos of deskPositions" class="desk-group">
+                            <!-- Cerchio postazione -->
+                            <circle
+                                    [attr.cx]="deskPos.x"
+                                    [attr.cy]="deskPos.y"
+                                    r="10"
+                                    [ngClass]="getDeskClass(deskPos)"
+                                    [class.clickable]="deskPos.available || !deskPos.available"
+                                    (click)="onDeskClick(deskPos)"
+                                    [ngbTooltip]="getDeskTooltip(deskPos)"
+                                    placement="top">
+                            </circle>
 
-                    <!-- Gruppo per ogni postazione -->
-                    <g *ngFor="let deskPos of deskPositions" class="desk-group">
-                        <!-- Cerchio postazione -->
-                        <circle
-                                [attr.cx]="deskPos.x"
-                                [attr.cy]="deskPos.y"
-                                r="10"
-                                [ngClass]="getDeskClass(deskPos)"
-                                [class.clickable]="deskPos.available || !deskPos.available"
-                                (click)="onDeskClick(deskPos)"
-                                [ngbTooltip]="getDeskTooltip(deskPos)"
-                                placement="top">
-                        </circle>
-<!--                        <circle-->
-<!--                                [attr.cx]="deskPos.x"-->
-<!--                                [attr.cy]="deskPos.y"-->
-<!--                                r="10"-->
-<!--                                [ngClass]="{-->
-<!--                'desk-circle': true,-->
-<!--                'desk-available': deskPos.available,-->
-<!--                'desk-occupied': !deskPos.available,-->
-<!--                'desk-my-booking': !deskPos.available && deskPos.bookedByCurrentUser,-->
-
-<!--              }"-->
-<!--                                (click)="onDeskClick(deskPos)"-->
-<!--                                [ngbTooltip]="getDeskTooltip(deskPos)"-->
-<!--                                placement="top"-->
-<!--                        />-->
-
-                        <!-- Numero della postazione -->
-                        <text
-                                [attr.x]="deskPos.x"
-                                [attr.y]="deskPos.y + 5"
-                                class="desk-number"
-                                text-anchor="middle"
-                                dominant-baseline="middle"
-                                pointer-events="none"
-                        >
-                            {{ deskPos.desk.deskNumber }}
-                        </text>
-                    </g>
-                </svg>
+                            <!-- Numero della postazione -->
+                            <text
+                                    [attr.x]="deskPos.x"
+                                    [attr.y]="deskPos.y + 5"
+                                    class="desk-number"
+                                    text-anchor="middle"
+                                    dominant-baseline="middle"
+                                    pointer-events="none"
+                            >
+                                {{ deskPos.desk.deskNumber }}
+                            </text>
+                        </g>
+                    </svg>
+                </div>
             </div>
 
             <div *ngIf="!loading && deskPositions.length === 0" class="alert alert-warning text-center">

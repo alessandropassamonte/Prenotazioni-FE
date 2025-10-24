@@ -1,16 +1,44 @@
 import { Component, EventEmitter, Output, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { NgbDatepickerModule, NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
+import { NgbDatepickerModule, NgbDateStruct, NgbDateParserFormatter } from '@ng-bootstrap/ng-bootstrap';
 import { CompanyHolidayService } from '../../services/company-holiday.service';
 import { CompanyHoliday } from '../../models/company-holiday.model';
+import { Injectable } from '@angular/core';
+
+@Injectable()
+export class CustomDateParserFormatter extends NgbDateParserFormatter {
+    readonly DELIMITER = '/';
+
+    parse(value: string): NgbDateStruct | null {
+        if (value) {
+            const date = value.split(this.DELIMITER);
+            return {
+                day: parseInt(date[0], 10),
+                month: parseInt(date[1], 10),
+                year: parseInt(date[2], 10),
+            };
+        }
+        return null;
+    }
+
+    format(date: NgbDateStruct | null): string {
+        if (!date) return '';
+        return `${this.pad(date.day)}/${this.pad(date.month)}/${date.year}`;
+    }
+
+    private pad(n: number): string {
+        return n < 10 ? `0${n}` : `${n}`;
+    }
+}
 
 @Component({
     selector: 'app-date-selector',
     standalone: true,
     imports: [CommonModule, FormsModule, NgbDatepickerModule],
     templateUrl: './date-selector.component.html',
-    styleUrls: ['./date-selector.component.scss']
+    styleUrls: ['./date-selector.component.scss'],
+    providers: [{ provide: NgbDateParserFormatter, useClass: CustomDateParserFormatter }]
 })
 export class DateSelectorComponent implements OnInit {
     @Output() dateSelected = new EventEmitter<Date>();

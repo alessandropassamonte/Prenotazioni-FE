@@ -41,13 +41,15 @@
                         <a class="nav-link dropdown-toggle user-dropdown"
                            id="userDropdown"
                            role="button"
-                           data-bs-toggle="dropdown"
-                           aria-expanded="false"
+                           (click)="toggleDropdown()"
+                           [attr.aria-expanded]="isDropdownOpen"
                            style="cursor: pointer;">
                             <i class="bi bi-person-circle"></i>
                             <span class="user-name">{{ currentUser?.email || getUserDisplayName() }}</span>
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <ul class="dropdown-menu dropdown-menu-end"
+                            [class.show]="isDropdownOpen"
+                            aria-labelledby="userDropdown">
                             <li>
                                 <div class="dropdown-header">
                                     <div class="user-info">
@@ -59,7 +61,7 @@
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <a class="dropdown-item" (click)="logout(); $event.preventDefault()" style="cursor: pointer;">
+                                <a class="dropdown-item" (click)="logout()" style="cursor: pointer;">
                                     <i class="bi bi-box-arrow-right"></i>
                                     Logout
                                 </a>

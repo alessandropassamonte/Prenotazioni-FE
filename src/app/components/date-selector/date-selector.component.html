@@ -12,18 +12,17 @@
                                 type="text"
                                 id="datepicker"
                                 class="form-control form-control-lg"
-                                placeholder="Seleziona una data"
+                                placeholder="GG/MM/YYYY"
                                 ngbDatepicker
                                 #d="ngbDatepicker"
                                 [(ngModel)]="selectedDate"
                                 (ngModelChange)="onDateChange($event)"
+                                (click)="d.toggle()"
                                 [minDate]="minDate"
                                 [maxDate]="maxDate"
                                 [markDisabled]="isDisabled"
                         />
-                        <button class="btn btn-outline-secondary calendar-btn" (click)="d.toggle()" type="button">
-                            <i class="bi bi-calendar3"></i>
-                        </button>
+
                     </div>
 
                     <!-- Loading indicator -->

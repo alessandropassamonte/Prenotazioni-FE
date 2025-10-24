@@ -30,6 +30,8 @@
       border-radius: 8px;
       transition: all 0.3s ease;
       font-weight: 500;
+      display: flex;
+      align-items: center;
 
       i {
         margin-right: 0.5rem;
@@ -43,6 +45,12 @@
         background-color: rgba(255, 255, 255, 0.2);
         font-weight: 600;
       }
+    }
+
+    // Fix per allineamento verticale dropdown
+    .nav-item.dropdown {
+      display: flex;
+      align-items: center;
     }
 
     // Stili per il dropdown utente

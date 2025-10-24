@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges, ViewChild, TemplateRef, OnInit } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, ViewChild, TemplateRef, OnInit, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Floor, Desk } from '../../models/floor.model';
 import { Booking, BookingType, CreateBookingRequest } from '../../models/booking.model';
@@ -23,13 +23,14 @@ interface DeskPosition {
     templateUrl: './floor-map.component.html',
     styleUrls: ['./floor-map.component.scss']
 })
-export class FloorMapComponent implements OnInit, OnChanges {
+export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
     @Input() floor?: Floor;
     @Input() selectedDate?: Date;
 
     @ViewChild('confirmModal') confirmModal?: TemplateRef<any>;
     @ViewChild('modifyModal') modifyModal?: TemplateRef<any>;
     @ViewChild('userInfoModal') userInfoModal?: TemplateRef<any>;
+    @ViewChild('floorMapSvg', { static: false }) svgElement?: ElementRef<SVGSVGElement>;
 
     desks: Desk[] = [];
     deskPositions: DeskPosition[] = [];
@@ -41,6 +42,24 @@ export class FloorMapComponent implements OnInit, OnChanges {
     selectedBooking?: Booking;
     availableDesks: number = 0;
     occupiedDesks: number = 0;
+
+    // Zoom and Pan properties
+    zoomLevel = 1;
+    minZoom = 1;
+    maxZoom = 5;
+    viewBoxX = 0;
+    viewBoxY = 0;
+    viewBoxWidth = 1200;
+    viewBoxHeight = 848;
+
+    // Pan properties
+    isPanning = false;
+    startPanX = 0;
+    startPanY = 0;
+
+    // Touch properties
+    lastTouchDistance = 0;
+    lastTouchCenter = { x: 0, y: 0 };
 
     private floorLayouts: { [key: number]: { [deskNumber: string]: { x: number; y: number } } } = {
         1: this.generateFloor1Layout(),
@@ -68,6 +87,10 @@ export class FloorMapComponent implements OnInit, OnChanges {
         if ((changes['floor'] || changes['selectedDate']) && this.floor && this.selectedDate) {
             this.loadDesks();
         }
+    }
+
+    ngAfterViewInit(): void {
+        this.setupZoomListeners();
     }
 
     loadDesks(): void {
@@ -327,6 +350,235 @@ export class FloorMapComponent implements OnInit, OnChanges {
             x: 100 + (num % 10) * 80,
             y: 100 + Math.floor(num / 10) * 80
         };
+    }
+
+    private setupZoomListeners(): void {
+        if (!this.svgElement) return;
+
+        const svg = this.svgElement.nativeElement;
+
+        // Previeni il comportamento di default del browser per il pinch-zoom
+        svg.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        svg.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    }
+
+    onWheel(event: WheelEvent): void {
+        event.preventDefault();
+
+        const delta = event.deltaY > 0 ? -0.1 : 0.1;
+        const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoomLevel + delta));
+
+        if (newZoom === this.zoomLevel) return;
+
+        // Calcola il punto del mouse nell'SVG
+        const svg = this.svgElement?.nativeElement;
+        if (!svg) return;
+
+        const rect = svg.getBoundingClientRect();
+        const mouseX = ((event.clientX - rect.left) / rect.width) * this.viewBoxWidth + this.viewBoxX;
+        const mouseY = ((event.clientY - rect.top) / rect.height) * this.viewBoxHeight + this.viewBoxY;
+
+        this.zoomToPoint(newZoom, mouseX, mouseY);
+    }
+
+    onTouchStart(event: TouchEvent): void {
+        if (event.touches.length === 2) {
+            // Pinch-to-zoom inizia
+            const touch1 = event.touches[0];
+            const touch2 = event.touches[1];
+
+            this.lastTouchDistance = this.getTouchDistance(touch1, touch2);
+            this.lastTouchCenter = this.getTouchCenter(touch1, touch2);
+        } else if (event.touches.length === 1 && this.zoomLevel > 1) {
+            // Pan inizia
+            this.isPanning = true;
+            const touch = event.touches[0];
+            const svg = this.svgElement?.nativeElement;
+            if (!svg) return;
+
+            const rect = svg.getBoundingClientRect();
+            this.startPanX = ((touch.clientX - rect.left) / rect.width) * this.viewBoxWidth + this.viewBoxX;
+            this.startPanY = ((touch.clientY - rect.top) / rect.height) * this.viewBoxHeight + this.viewBoxY;
+        }
+    }
+
+    onTouchMove(event: TouchEvent): void {
+        if (event.touches.length === 2) {
+            // Pinch-to-zoom
+            const touch1 = event.touches[0];
+            const touch2 = event.touches[1];
+
+            const currentDistance = this.getTouchDistance(touch1, touch2);
+            const currentCenter = this.getTouchCenter(touch1, touch2);
+
+            if (this.lastTouchDistance > 0) {
+                const scale = currentDistance / this.lastTouchDistance;
+                const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoomLevel * scale));
+
+                const svg = this.svgElement?.nativeElement;
+                if (!svg) return;
+
+                const rect = svg.getBoundingClientRect();
+                const centerX = ((currentCenter.x - rect.left) / rect.width) * this.viewBoxWidth + this.viewBoxX;
+                const centerY = ((currentCenter.y - rect.top) / rect.height) * this.viewBoxHeight + this.viewBoxY;
+
+                this.zoomToPoint(newZoom, centerX, centerY);
+            }
+
+            this.lastTouchDistance = currentDistance;
+            this.lastTouchCenter = currentCenter;
+        } else if (event.touches.length === 1 && this.isPanning) {
+            // Pan
+            const touch = event.touches[0];
+            const svg = this.svgElement?.nativeElement;
+            if (!svg) return;
+
+            const rect = svg.getBoundingClientRect();
+            const currentX = ((touch.clientX - rect.left) / rect.width) * this.viewBoxWidth + this.viewBoxX;
+            const currentY = ((touch.clientY - rect.top) / rect.height) * this.viewBoxHeight + this.viewBoxY;
+
+            const deltaX = this.startPanX - currentX;
+            const deltaY = this.startPanY - currentY;
+
+            this.viewBoxX += deltaX;
+            this.viewBoxY += deltaY;
+
+            this.constrainViewBox();
+        }
+    }
+
+    onTouchEnd(event: TouchEvent): void {
+        if (event.touches.length < 2) {
+            this.lastTouchDistance = 0;
+        }
+        if (event.touches.length === 0) {
+            this.isPanning = false;
+        }
+    }
+
+    onMouseDown(event: MouseEvent): void {
+        if (this.zoomLevel > 1) {
+            this.isPanning = true;
+            const svg = this.svgElement?.nativeElement;
+            if (!svg) return;
+
+            const rect = svg.getBoundingClientRect();
+            this.startPanX = ((event.clientX - rect.left) / rect.width) * this.viewBoxWidth + this.viewBoxX;
+            this.startPanY = ((event.clientY - rect.top) / rect.height) * this.viewBoxHeight + this.viewBoxY;
+        }
+    }
+
+    onMouseMove(event: MouseEvent): void {
+        if (this.isPanning && this.zoomLevel > 1) {
+            const svg = this.svgElement?.nativeElement;
+            if (!svg) return;
+
+            const rect = svg.getBoundingClientRect();
+            const currentX = ((event.clientX - rect.left) / rect.width) * this.viewBoxWidth + this.viewBoxX;
+            const currentY = ((event.clientY - rect.top) / rect.height) * this.viewBoxHeight + this.viewBoxY;
+
+            const deltaX = this.startPanX - currentX;
+            const deltaY = this.startPanY - currentY;
+
+            this.viewBoxX += deltaX;
+            this.viewBoxY += deltaY;
+
+            this.constrainViewBox();
+        }
+    }
+
+    onMouseUp(): void {
+        this.isPanning = false;
+    }
+
+    onMouseLeave(): void {
+        this.isPanning = false;
+    }
+
+    resetZoom(): void {
+        this.zoomLevel = 1;
+        this.viewBoxX = 0;
+        this.viewBoxY = 0;
+        this.viewBoxWidth = 1200;
+        this.viewBoxHeight = 848;
+    }
+
+    zoomIn(): void {
+        const newZoom = Math.min(this.maxZoom, this.zoomLevel + 0.3);
+        this.zoomToPoint(newZoom, this.viewBoxX + this.viewBoxWidth / 2, this.viewBoxY + this.viewBoxHeight / 2);
+    }
+
+    zoomOut(): void {
+        const newZoom = Math.max(this.minZoom, this.zoomLevel - 0.3);
+        this.zoomToPoint(newZoom, this.viewBoxX + this.viewBoxWidth / 2, this.viewBoxY + this.viewBoxHeight / 2);
+    }
+
+    private zoomToPoint(newZoom: number, focusX: number, focusY: number): void {
+        const baseWidth = 1200;
+        const baseHeight = 848;
+
+        const newWidth = baseWidth / newZoom;
+        const newHeight = baseHeight / newZoom;
+
+        // Mantieni il punto focale nella stessa posizione relativa
+        const relativeX = (focusX - this.viewBoxX) / this.viewBoxWidth;
+        const relativeY = (focusY - this.viewBoxY) / this.viewBoxHeight;
+
+        this.viewBoxX = focusX - relativeX * newWidth;
+        this.viewBoxY = focusY - relativeY * newHeight;
+        this.viewBoxWidth = newWidth;
+        this.viewBoxHeight = newHeight;
+        this.zoomLevel = newZoom;
+
+        this.constrainViewBox();
+    }
+
+    private constrainViewBox(): void {
+        const baseWidth = 1200;
+        const baseHeight = 848;
+
+        // Impedisce di andare oltre i bordi
+        if (this.viewBoxX < 0) this.viewBoxX = 0;
+        if (this.viewBoxY < 0) this.viewBoxY = 0;
+        if (this.viewBoxX + this.viewBoxWidth > baseWidth) {
+            this.viewBoxX = baseWidth - this.viewBoxWidth;
+        }
+        if (this.viewBoxY + this.viewBoxHeight > baseHeight) {
+            this.viewBoxY = baseHeight - this.viewBoxHeight;
+        }
+    }
+
+    private getTouchDistance(touch1: Touch, touch2: Touch): number {
+        const dx = touch1.clientX - touch2.clientX;
+        const dy = touch1.clientY - touch2.clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    private getTouchCenter(touch1: Touch, touch2: Touch): { x: number; y: number } {
+        return {
+            x: (touch1.clientX + touch2.clientX) / 2,
+            y: (touch1.clientY + touch2.clientY) / 2
+        };
+    }
+
+    getViewBox(): string {
+        return `${this.viewBoxX} ${this.viewBoxY} ${this.viewBoxWidth} ${this.viewBoxHeight}`;
+    }
+
+    getTransform(): string {
+        // Calcola la trasformazione CSS per sincronizzare lo zoom dell'immagine di sfondo
+        const scaleX = -this.viewBoxX / this.viewBoxWidth * 100;
+        const scaleY = -this.viewBoxY / this.viewBoxHeight * 100;
+        return `scale(${this.zoomLevel}) translate(${scaleX}%, ${scaleY}%)`;
     }
 
     // ============================================================================
