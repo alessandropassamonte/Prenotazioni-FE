@@ -107,6 +107,14 @@
                          (mouseleave)="onMouseLeave()"
                          [class.panning]="isPanning">
 
+                        <rect
+                                x="0"
+                                y="0"
+                                [attr.width]="viewBoxWidth"
+                                [attr.height]="viewBoxHeight"
+                                fill="transparent"
+                                class="interaction-layer"
+                        />
                         <!-- Gruppo per ogni postazione - con filtro di ricerca -->
                         <g *ngFor="let deskPos of deskPositions"
                            class="desk-group"

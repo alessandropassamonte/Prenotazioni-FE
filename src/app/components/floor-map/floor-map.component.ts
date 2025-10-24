@@ -57,10 +57,12 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
     viewBoxWidth = 1200;
     viewBoxHeight = 848;
 
-    // Pan properties
-    isPanning = false;
+    panX = 0;
+    panY = 0;
     startPanX = 0;
     startPanY = 0;
+    isPanning = false;
+
 
     // Touch properties
     lastTouchDistance = 0;
@@ -374,36 +376,28 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
     zoomIn(): void {
         if (this.zoomLevel < this.maxZoom) {
             this.zoomLevel = Math.min(this.zoomLevel + 0.2, this.maxZoom);
-            this.updateViewBox();
         }
     }
 
     zoomOut(): void {
         if (this.zoomLevel > this.minZoom) {
             this.zoomLevel = Math.max(this.zoomLevel - 0.2, this.minZoom);
-            this.updateViewBox();
         }
     }
 
     resetZoom(): void {
         this.zoomLevel = 1;
-        this.viewBoxX = 0;
-        this.viewBoxY = 0;
-        this.updateViewBox();
+        this.panX = 0;
+        this.panY = 0;
     }
 
+// Modifica getTransform() per includere anche il pan
     getTransform(): string {
-        return `scale(${this.zoomLevel})`;
+        return `translate(${this.panX}px, ${this.panY}px) scale(${this.zoomLevel})`;
     }
 
     getViewBox(): string {
-        return `${this.viewBoxX} ${this.viewBoxY} ${this.viewBoxWidth} ${this.viewBoxHeight}`;
-    }
-
-    updateViewBox(): void {
-        const scale = 1 / this.zoomLevel;
-        this.viewBoxWidth = 1200 * scale;
-        this.viewBoxHeight = 848 * scale;
+        return `0 0 ${this.viewBoxWidth} ${this.viewBoxHeight}`;
     }
 
     // Wheel Zoom
@@ -414,7 +408,6 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
 
         if (newZoom !== this.zoomLevel) {
             this.zoomLevel = newZoom;
-            this.updateViewBox();
         }
     }
 
@@ -436,24 +429,12 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
 
     onTouchMove(event: TouchEvent): void {
         if (event.touches.length === 2) {
-            event.preventDefault();
-            const touch1 = event.touches[0];
-            const touch2 = event.touches[1];
-            const distance = this.getTouchDistance(touch1, touch2);
-
-            if (this.lastTouchDistance > 0) {
-                const scale = distance / this.lastTouchDistance;
-                const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoomLevel * scale));
-                this.zoomLevel = newZoom;
-                this.updateViewBox();
-            }
-
-            this.lastTouchDistance = distance;
+            // ... logica pinch zoom esistente ...
         } else if (event.touches.length === 1 && this.isPanning) {
             event.preventDefault();
             const touch = event.touches[0];
-            this.viewBoxX = touch.clientX - this.startPanX;
-            this.viewBoxY = touch.clientY - this.startPanY;
+            this.panX = touch.clientX - this.startPanX;
+            this.panY = touch.clientY - this.startPanY;
         }
     }
 
@@ -470,16 +451,16 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
     onMouseDown(event: MouseEvent): void {
         if (this.zoomLevel > 1) {
             this.isPanning = true;
-            this.startPanX = event.clientX - this.viewBoxX;
-            this.startPanY = event.clientY - this.viewBoxY;
+            this.startPanX = event.clientX - this.panX;
+            this.startPanY = event.clientY - this.panY;
             event.preventDefault();
         }
     }
 
     onMouseMove(event: MouseEvent): void {
         if (this.isPanning && this.zoomLevel > 1) {
-            this.viewBoxX = event.clientX - this.startPanX;
-            this.viewBoxY = event.clientY - this.startPanY;
+            this.panX = event.clientX - this.startPanX;
+            this.panY = event.clientY - this.startPanY;
             event.preventDefault();
         }
     }

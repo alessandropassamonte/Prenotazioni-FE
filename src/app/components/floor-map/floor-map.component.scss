@@ -147,12 +147,18 @@
       width: 100%;
       height: 100%;
       z-index: 10;
-      pointer-events: none;
+      pointer-events: all;
       cursor: default;
       transition: cursor 0.2s ease;
 
       &.panning {
         cursor: grabbing !important;
+      }
+
+      // Rettangolo trasparente per catturare eventi
+      .interaction-layer {
+        pointer-events: all;
+        cursor: grab;
       }
 
       &:not(.panning) {
@@ -171,6 +177,7 @@
         stroke-width: 3;
         transition: all 0.2s ease;
         pointer-events: all;
+        cursor: pointer;
 
         &.desk-available {
           fill: rgba(39, 174, 96, 0.9);
