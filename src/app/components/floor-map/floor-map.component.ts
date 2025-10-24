@@ -33,20 +33,6 @@ export class FloorMapComponent implements OnChanges {
     selectedDesk?: Desk;
     modalRef?: NgbModalRef;
 
-    // ============================================================================
-    // CONFIGURAZIONE COORDINATE - VERSIONE FINALE
-    // ============================================================================
-    // ViewBox SVG: 1200 × 848 (aspect ratio 1.414)
-    // Immagine originale: 2000 × 1414 px (aspect ratio 1.414)
-    // Coordinate CSV: relative a 3509 × 2481 px
-    // Formula: svgCoord = (csvCoord / originalImageSize) * viewBoxSize
-    //
-    // Questa configurazione garantisce:
-    // - Nessuna distorsione (aspect ratio corretto)
-    // - Coordinate precise e prevedibili
-    // - Facile implementazione zoom/pan futuro
-    // - Responsive su mobile
-    // ============================================================================
 
     private floorLayouts: { [key: number]: { [deskNumber: string]: { x: number; y: number } } } = {
         1: this.generateFloor1Layout(),

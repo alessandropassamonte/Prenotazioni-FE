@@ -3,45 +3,46 @@
 // ========================================
 // File: src/app/interceptors/jwt.interceptor.ts
 
-import { Injectable } from '@angular/core';
+import { inject } from '@angular/core';
 import {
     HttpRequest,
-    HttpHandler,
+    HttpHandlerFn,
     HttpEvent,
-    HttpInterceptor,
-    HttpErrorResponse
+    HttpErrorResponse,
+    HttpInterceptorFn
 } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
 import { Router } from '@angular/router';
 
-@Injectable()
-export class JwtInterceptor implements HttpInterceptor {
-    constructor(
-        private authService: AuthService,
-        private router: Router
-    ) {}
+export const jwtInterceptor: HttpInterceptorFn = (
+    request: HttpRequest<any>,
+    next: HttpHandlerFn
+): Observable<HttpEvent<any>> => {
+    const authService = inject(AuthService);
+    const router = inject(Router);
 
-    intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-        // Aggiungi token JWT alle richieste
-        const token = this.authService.getToken();
-        if (token) {
-            request = request.clone({
-                setHeaders: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-        }
+    // Aggiungi token JWT alle richieste
+    const token = authService.getToken();
 
-        return next.handle(request).pipe(
-            catchError((error: HttpErrorResponse) => {
-                if (error.status === 401) {
-                    // Token scaduto o non valido - logout
-                    this.authService.logout();
-                }
-                return throwError(() => error);
-            })
-        );
+    if (token) {
+        request = request.clone({
+            setHeaders: {
+                Authorization: `Bearer ${token}`
+            }
+        });
     }
-}
+
+    return next(request).pipe(
+        catchError((error: HttpErrorResponse) => {
+            console.log('JWT INTERCEPTOR - Error:', error.status);
+            if (error.status === 401) {
+                // Token scaduto o non valido - logout
+                authService.logout();
+                router.navigate(['/login']);
+            }
+            return throwError(() => error);
+        })
+    );
+};
