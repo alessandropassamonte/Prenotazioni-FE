@@ -1,0 +1,67 @@
+<div class="app-container">
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+      <a class="navbar-brand" routerLink="/">
+        <i class="bi bi-building"></i>
+        {{ title }}
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+              <i class="bi bi-house-door"></i>
+              Home
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/booking" routerLinkActive="active">
+              <i class="bi bi-calendar-plus"></i>
+              Prenota
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/my-bookings" routerLinkActive="active">
+              <i class="bi bi-calendar-check"></i>
+              Le Mie Prenotazioni
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-6">
+          <p class="mb-0">
+            <i class="bi bi-building"></i>
+            <strong>{{ title }}</strong>
+          </p>
+          <p class="text-muted small mb-0">
+            Sistema di gestione prenotazioni postazioni di lavoro
+          </p>
+        </div>
+        <div class="col-md-6 text-md-end">
+          <p class="mb-0 text-muted small">
+            © {{ currentYear }} Company. Tutti i diritti riservati.
+          </p>
+          <p class="mb-0 text-muted small">
+            Versione 1.0.0
+          </p>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>

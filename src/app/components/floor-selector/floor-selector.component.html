@@ -1,0 +1,40 @@
+<div class="floor-selector-container">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title mb-3">
+        <i class="bi bi-building"></i> Seleziona Piano
+      </h5>
+      
+      <div *ngIf="loading" class="text-center py-3">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Caricamento...</span>
+        </div>
+      </div>
+
+      <div *ngIf="!loading && floors.length > 0" class="floor-buttons-container">
+        <button 
+          *ngFor="let floor of floors"
+          type="button"
+          class="btn floor-btn"
+          [class.active]="isSelected(floor)"
+          (click)="selectFloor(floor)"
+        >
+          <div class="floor-icon">
+            <i class="bi bi-building"></i>
+          </div>
+          <div class="floor-info">
+            <div class="floor-name">{{ floor.name }}</div>
+            <div class="floor-details">
+              <small>{{ floor.totalDesks }} postazioni</small>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <div *ngIf="!loading && floors.length === 0" class="alert alert-warning" role="alert">
+        <i class="bi bi-exclamation-triangle"></i>
+        Nessun piano disponibile al momento.
+      </div>
+    </div>
+  </div>
+</div>

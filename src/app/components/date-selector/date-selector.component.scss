@@ -1,0 +1,36 @@
+.date-selector-container {
+  margin-bottom: 2rem;
+
+  .card {
+    border: none;
+    border-radius: 10px;
+
+    .card-title {
+      color: #2c3e50;
+      font-weight: 600;
+
+      i {
+        color: #3498db;
+        margin-right: 0.5rem;
+      }
+    }
+
+    .form-control-lg {
+      font-size: 1.1rem;
+      border-radius: 8px;
+      border: 2px solid #e0e0e0;
+      transition: all 0.3s ease;
+
+      &:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+      }
+    }
+
+    .alert-info {
+      background-color: #e8f4f8;
+      border-color: #bee5eb;
+      border-radius: 8px;
+    }
+  }
+}

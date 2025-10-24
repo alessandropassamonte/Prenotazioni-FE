@@ -1,0 +1,97 @@
+<div class="booking-list-container">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title mb-3">
+        <i class="bi bi-calendar-check"></i> Le Mie Prenotazioni
+      </h5>
+
+      <div *ngIf="loading" class="text-center py-3">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Caricamento...</span>
+        </div>
+      </div>
+
+      <div *ngIf="!loading && bookings.length === 0" class="alert alert-info text-center" role="alert">
+        <i class="bi bi-info-circle"></i>
+        Non hai prenotazioni attive al momento.
+      </div>
+
+      <div *ngIf="!loading && bookings.length > 0" class="bookings-list">
+        <div *ngFor="let booking of bookings" class="booking-card mb-3">
+          <div class="booking-header">
+            <div class="booking-info">
+              <h6 class="booking-title">
+                <i class="bi bi-bookmark"></i>
+                Postazione {{ booking.deskNumber }}
+              </h6>
+              <p class="booking-subtitle mb-0">
+                <i class="bi bi-building"></i>
+                {{ booking.floorName }}
+              </p>
+            </div>
+            <span class="badge" [ngClass]="getStatusBadgeClass(booking.status)">
+              {{ getStatusLabel(booking.status) }}
+            </span>
+          </div>
+
+          <div class="booking-body">
+            <div class="booking-detail">
+              <i class="bi bi-calendar3"></i>
+              <strong>Data:</strong>
+              {{ booking.bookingDate | date:'dd/MM/yyyy' }}
+            </div>
+            
+            <div *ngIf="booking.type" class="booking-detail">
+              <i class="bi bi-clock"></i>
+              <strong>Tipo:</strong>
+              <span *ngIf="booking.type === 'FULL_DAY'">Giornata Intera</span>
+              <span *ngIf="booking.type === 'MORNING'">Mattina</span>
+              <span *ngIf="booking.type === 'AFTERNOON'">Pomeriggio</span>
+            </div>
+
+            <div *ngIf="booking.checkedInAt" class="booking-detail">
+              <i class="bi bi-box-arrow-in-right"></i>
+              <strong>Check-in:</strong>
+              {{ booking.checkedInAt | date:'HH:mm' }}
+            </div>
+
+            <div *ngIf="booking.checkedOutAt" class="booking-detail">
+              <i class="bi bi-box-arrow-left"></i>
+              <strong>Check-out:</strong>
+              {{ booking.checkedOutAt | date:'HH:mm' }}
+            </div>
+          </div>
+
+          <div class="booking-actions">
+            <button 
+              *ngIf="canCheckIn(booking)"
+              type="button" 
+              class="btn btn-sm btn-success"
+              (click)="checkIn(booking)"
+            >
+              <i class="bi bi-box-arrow-in-right"></i> Check-in
+            </button>
+
+            <button 
+              *ngIf="canCheckOut(booking)"
+              type="button" 
+              class="btn btn-sm btn-info"
+              (click)="checkOut(booking)"
+            >
+              <i class="bi bi-box-arrow-left"></i> Check-out
+            </button>
+
+            <button 
+              *ngIf="canCancel(booking)"
+              type="button" 
+              class="btn btn-sm btn-outline-danger"
+              (click)="cancelBooking(booking)"
+            >
+              <i class="bi bi-x-circle"></i> Cancella
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

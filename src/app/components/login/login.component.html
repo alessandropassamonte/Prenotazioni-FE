@@ -1,0 +1,50 @@
+<div class="login-container">
+    <h2>Login</h2>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input
+                    type="email"
+                    id="email"
+                    formControlName="email"
+                    class="form-control"
+                    [class.is-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+            />
+            <div class="invalid-feedback" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+                Inserisci un'email valida
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input
+                    type="password"
+                    id="password"
+                    formControlName="password"
+                    class="form-control"
+                    [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+            />
+            <div class="invalid-feedback" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+                La password è obbligatoria
+            </div>
+        </div>
+
+        <div class="error-message" *ngIf="error">
+            {{ error }}
+        </div>
+
+        <button
+                type="submit"
+                class="btn btn-primary"
+                [disabled]="loginForm.invalid || loading"
+        >
+            <span *ngIf="!loading">Login</span>
+            <span *ngIf="loading">Caricamento...</span>
+        </button>
+    </form>
+
+    <div class="register-link">
+        Non hai un account? <a routerLink="/register">Registrati</a>
+    </div>
+</div>
