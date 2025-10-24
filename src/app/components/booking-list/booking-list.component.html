@@ -1,97 +1,247 @@
 <div class="booking-list-container">
-  <div class="card shadow-sm">
-    <div class="card-body">
-      <h5 class="card-title mb-3">
-        <i class="bi bi-calendar-check"></i> Le Mie Prenotazioni
-      </h5>
-
-      <div *ngIf="loading" class="text-center py-3">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Caricamento...</span>
+    <!-- Header con filtri -->
+    <div class="list-header">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">
+                <i class="bi bi-list-check"></i>
+                Prenotazioni
+                <span class="badge bg-secondary ms-2">{{ filteredBookings.length }}</span>
+            </h4>
+            <button class="btn btn-outline-primary" (click)="toggleFilters()">
+                <i class="bi" [ngClass]="showFilters ? 'bi-funnel-fill' : 'bi-funnel'"></i>
+                Filtri
+            </button>
         </div>
-      </div>
 
-      <div *ngIf="!loading && bookings.length === 0" class="alert alert-info text-center" role="alert">
-        <i class="bi bi-info-circle"></i>
-        Non hai prenotazioni attive al momento.
-      </div>
+        <!-- Pannello Filtri -->
+        <div class="filters-panel" *ngIf="showFilters">
+            <div class="row g-3">
+                <!-- Filtro Data Inizio -->
+                <div class="col-md-3">
+                    <label class="form-label">Data Da</label>
+                    <input
+                            type="date"
+                            class="form-control"
+                            [(ngModel)]="filters.startDate"
+                            (ngModelChange)="applyFilters()"
+                            [max]="filters.endDate || ''"
+                    />
+                </div>
 
-      <div *ngIf="!loading && bookings.length > 0" class="bookings-list">
-        <div *ngFor="let booking of bookings" class="booking-card mb-3">
-          <div class="booking-header">
-            <div class="booking-info">
-              <h6 class="booking-title">
-                <i class="bi bi-bookmark"></i>
-                Postazione {{ booking.deskNumber }}
-              </h6>
-              <p class="booking-subtitle mb-0">
-                <i class="bi bi-building"></i>
-                {{ booking.floorName }}
-              </p>
+                <!-- Filtro Data Fine -->
+                <div class="col-md-3">
+                    <label class="form-label">Data A</label>
+                    <input
+                            type="date"
+                            class="form-control"
+                            [(ngModel)]="filters.endDate"
+                            (ngModelChange)="applyFilters()"
+                            [min]="filters.startDate || ''"
+                    />
+                </div>
+
+                <!-- Filtro Utente (solo per ADMIN/MANAGER) -->
+                <div class="col-md-3" *ngIf="isAdminOrManager()">
+                    <label class="form-label">Utente (Email)</label>
+                    <input
+                            type="text"
+                            class="form-control"
+                            placeholder="Cerca per email..."
+                            [(ngModel)]="filters.userEmail"
+                            (ngModelChange)="applyFilters()"
+                    />
+                </div>
+
+                <!-- Filtro Status -->
+                <div class="col-md-3">
+                    <label class="form-label">Stato</label>
+                    <select
+                            class="form-select"
+                            [(ngModel)]="filters.status"
+                            (ngModelChange)="applyFilters()"
+                    >
+                        <option [ngValue]="undefined">Tutti gli stati</option>
+                        <option [ngValue]="BookingStatus.ACTIVE">Attiva</option>
+                        <option [ngValue]="BookingStatus.CHECKED_IN">Check-in</option>
+                        <option [ngValue]="BookingStatus.CHECKED_OUT">Check-out</option>
+                        <option [ngValue]="BookingStatus.CANCELLED">Cancellata</option>
+                    </select>
+                </div>
+
+                <!-- Pulsante Reset -->
+                <div class="col-12">
+                    <button class="btn btn-sm btn-outline-secondary" (click)="resetFilters()">
+                        <i class="bi bi-x-circle"></i>
+                        Reset Filtri
+                    </button>
+                </div>
             </div>
-            <span class="badge" [ngClass]="getStatusBadgeClass(booking.status)">
-              {{ getStatusLabel(booking.status) }}
-            </span>
-          </div>
-
-          <div class="booking-body">
-            <div class="booking-detail">
-              <i class="bi bi-calendar3"></i>
-              <strong>Data:</strong>
-              {{ booking.bookingDate | date:'dd/MM/yyyy' }}
-            </div>
-            
-            <div *ngIf="booking.type" class="booking-detail">
-              <i class="bi bi-clock"></i>
-              <strong>Tipo:</strong>
-              <span *ngIf="booking.type === 'FULL_DAY'">Giornata Intera</span>
-              <span *ngIf="booking.type === 'MORNING'">Mattina</span>
-              <span *ngIf="booking.type === 'AFTERNOON'">Pomeriggio</span>
-            </div>
-
-            <div *ngIf="booking.checkedInAt" class="booking-detail">
-              <i class="bi bi-box-arrow-in-right"></i>
-              <strong>Check-in:</strong>
-              {{ booking.checkedInAt | date:'HH:mm' }}
-            </div>
-
-            <div *ngIf="booking.checkedOutAt" class="booking-detail">
-              <i class="bi bi-box-arrow-left"></i>
-              <strong>Check-out:</strong>
-              {{ booking.checkedOutAt | date:'HH:mm' }}
-            </div>
-          </div>
-
-          <div class="booking-actions">
-            <button 
-              *ngIf="canCheckIn(booking)"
-              type="button" 
-              class="btn btn-sm btn-success"
-              (click)="checkIn(booking)"
-            >
-              <i class="bi bi-box-arrow-in-right"></i> Check-in
-            </button>
-
-            <button 
-              *ngIf="canCheckOut(booking)"
-              type="button" 
-              class="btn btn-sm btn-info"
-              (click)="checkOut(booking)"
-            >
-              <i class="bi bi-box-arrow-left"></i> Check-out
-            </button>
-
-            <button 
-              *ngIf="canCancel(booking)"
-              type="button" 
-              class="btn btn-sm btn-outline-danger"
-              (click)="cancelBooking(booking)"
-            >
-              <i class="bi bi-x-circle"></i> Cancella
-            </button>
-          </div>
         </div>
-      </div>
     </div>
-  </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Caricamento...</span>
+        </div>
+        <p class="mt-2 text-muted">Caricamento prenotazioni...</p>
+    </div>
+
+    <!-- Lista Prenotazioni -->
+    <div *ngIf="!loading && filteredBookings.length > 0" class="bookings-list">
+        <div *ngFor="let booking of filteredBookings" class="booking-card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">
+                            <i class="bi bi-geo-alt-fill"></i>
+                            Postazione {{ booking.deskNumber }}
+                        </h5>
+                        <small class="text-muted">{{ booking.floorName }}</small>
+                    </div>
+                    <span class="badge" [ngClass]="getStatusBadgeClass(booking.status)">
+            {{ getStatusLabel(booking.status) }}
+          </span>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-2">
+                            <i class="bi bi-calendar3"></i>
+                            <strong>Data:</strong> {{ booking.bookingDate | date: 'dd/MM/yyyy' }}
+                        </p>
+                        <p class="mb-2" *ngIf="isAdminOrManager()">
+                            <i class="bi bi-person"></i>
+                            <strong>Utente:</strong> {{ booking.userName }} ({{ booking.userEmail }})
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-2" *ngIf="booking.checkedInAt">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            <strong>Check-in:</strong> {{ booking.checkedInAt }}
+                        </p>
+                        <p class="mb-2" *ngIf="booking.checkedOutAt">
+                            <i class="bi bi-box-arrow-left"></i>
+                            <strong>Check-out:</strong> {{ booking.checkedOutAt }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Note -->
+                <div *ngIf="booking.notes" class="alert alert-info mt-2 mb-0">
+                    <small><i class="bi bi-info-circle"></i> {{ booking.notes }}</small>
+                </div>
+            </div>
+
+            <!-- Azioni -->
+            <div class="card-footer">
+                <div class="d-flex gap-2 justify-content-end">
+                    <button
+                            *ngIf="canCheckIn(booking)"
+                            class="btn btn-sm btn-success"
+                            (click)="confirmCheckIn(booking)"
+                    >
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        Check-in
+                    </button>
+
+                    <button
+                            *ngIf="canCheckOut(booking)"
+                            class="btn btn-sm btn-info"
+                            (click)="confirmCheckOut(booking)"
+                    >
+                        <i class="bi bi-box-arrow-left"></i>
+                        Check-out
+                    </button>
+
+                    <button
+                            *ngIf="canCancel(booking)"
+                            class="btn btn-sm btn-danger"
+                            (click)="confirmCancelBooking(booking)"
+                    >
+                        <i class="bi bi-x-circle"></i>
+                        Cancella
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nessuna prenotazione -->
+    <div *ngIf="!loading && filteredBookings.length === 0" class="empty-state">
+        <i class="bi bi-calendar-x"></i>
+        <h5>Nessuna prenotazione trovata</h5>
+        <p class="text-muted">
+            {{ bookings.length === 0 ? 'Non hai prenotazioni al momento.' : 'Nessuna prenotazione corrisponde ai filtri selezionati.' }}
+        </p>
+        <button *ngIf="showFilters && bookings.length > 0" class="btn btn-outline-primary" (click)="resetFilters()">
+            Reset Filtri
+        </button>
+    </div>
 </div>
+
+<!-- Modale Conferma -->
+<ng-template #confirmModal let-modal>
+    <div class="modal-header">
+        <h5 class="modal-title">
+            <i [ngClass]="modalIcon"></i>
+            {{ modalTitle }}
+        </h5>
+        <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+    </div>
+    <div class="modal-body">
+        <p>{{ modalMessage }}</p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">
+            <i class="bi bi-x-circle"></i>
+            Annulla
+        </button>
+        <button type="button" class="btn btn-primary" (click)="executeAction()">
+            <i class="bi bi-check-circle"></i>
+            Conferma
+        </button>
+    </div>
+</ng-template>
+
+<!-- Modale Successo -->
+<ng-template #successModal let-modal>
+    <div class="modal-header bg-success text-white">
+        <h5 class="modal-title">
+            <i [ngClass]="modalIcon"></i>
+            {{ modalTitle }}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="modal.dismiss()"></button>
+    </div>
+    <div class="modal-body">
+        <p>{{ modalMessage }}</p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-success" (click)="closeModal()">
+            <i class="bi bi-check-circle"></i>
+            OK
+        </button>
+    </div>
+</ng-template>
+
+<!-- Modale Errore -->
+<ng-template #errorModal let-modal>
+    <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">
+            <i [ngClass]="modalIcon"></i>
+            {{ modalTitle }}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="modal.dismiss()"></button>
+    </div>
+    <div class="modal-body">
+        <p>{{ modalMessage }}</p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-danger" (click)="closeModal()">
+            <i class="bi bi-x-circle"></i>
+            Chiudi
+        </button>
+    </div>
+</ng-template>

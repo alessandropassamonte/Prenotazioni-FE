@@ -7,14 +7,14 @@
                     {{ floor?.name || 'Mappa Piano' }}
                 </h5>
                 <div class="legend">
-          <span class="legend-item">
-            <span class="legend-color available"></span>
-            Disponibile
-          </span>
                     <span class="legend-item">
-            <span class="legend-color occupied"></span>
-            Occupata
-          </span>
+                        <span class="legend-color available"></span>
+                        Disponibile
+                    </span>
+                    <span class="legend-item">
+                        <span class="legend-color occupied"></span>
+                        Occupata
+                    </span>
                 </div>
             </div>
 
@@ -26,7 +26,6 @@
             </div>
 
             <div *ngIf="!loading && floor" class="map-wrapper">
-                <!-- Background image del piano -->
                 <div class="floor-background"
                      [style.background-image]="'url(assets/images/piano_' + floor.floorNumber + '.jpg)'">
                 </div>
@@ -125,6 +124,46 @@
         <button type="button" class="btn btn-primary" (click)="confirmBooking()">
             <i class="bi bi-check-circle"></i>
             Conferma Prenotazione
+        </button>
+    </div>
+</ng-template>
+
+<!-- Modale Successo -->
+<ng-template #successModal let-modal>
+    <div class="modal-header bg-success text-white">
+        <h5 class="modal-title">
+            <i [ngClass]="modalIcon"></i>
+            {{ modalTitle }}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="modal.dismiss()"></button>
+    </div>
+    <div class="modal-body">
+        <p>{{ modalMessage }}</p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-success" (click)="closeModal()">
+            <i class="bi bi-check-circle"></i>
+            OK
+        </button>
+    </div>
+</ng-template>
+
+<!-- Modale Errore -->
+<ng-template #errorModal let-modal>
+    <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">
+            <i [ngClass]="modalIcon"></i>
+            {{ modalTitle }}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="modal.dismiss()"></button>
+    </div>
+    <div class="modal-body">
+        <p>{{ modalMessage }}</p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-danger" (click)="closeModal()">
+            <i class="bi bi-x-circle"></i>
+            Chiudi
         </button>
     </div>
 </ng-template>

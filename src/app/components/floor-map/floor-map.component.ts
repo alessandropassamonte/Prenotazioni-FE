@@ -5,7 +5,7 @@ import { BookingType, CreateBookingRequest } from '../../models/booking.model';
 import { DeskService } from '../../services/desk.service';
 import { BookingService } from '../../services/booking.service';
 import { AuthService } from '../../services/auth.service';
-import { NgbTooltipModule, NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
+import { NgbTooltipModule, NgbModal, NgbModalRef, NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
 
 interface DeskPosition {
     desk: Desk;
@@ -17,7 +17,7 @@ interface DeskPosition {
 @Component({
     selector: 'app-floor-map',
     standalone: true,
-    imports: [CommonModule, NgbTooltipModule],
+    imports: [CommonModule, NgbTooltipModule, NgbModalModule],
     templateUrl: './floor-map.component.html',
     styleUrls: ['./floor-map.component.scss']
 })
@@ -26,14 +26,20 @@ export class FloorMapComponent implements OnInit, OnChanges {
     @Input() selectedDate?: Date;
 
     @ViewChild('confirmModal') confirmModal?: TemplateRef<any>;
+    @ViewChild('successModal') successModal?: TemplateRef<any>;
+    @ViewChild('errorModal') errorModal?: TemplateRef<any>;
 
     desks: Desk[] = [];
     deskPositions: DeskPosition[] = [];
     loading = false;
     selectedDesk?: Desk;
     modalRef?: NgbModalRef;
-    currentUserId: number = 1; // Fallback se non autenticato
+    currentUserId: number = 1;
 
+    // Per i modali
+    modalTitle = '';
+    modalMessage = '';
+    modalIcon = '';
 
     private floorLayouts: { [key: number]: { [deskNumber: string]: { x: number; y: number } } } = {
         1: this.generateFloor1Layout(),
@@ -48,7 +54,6 @@ export class FloorMapComponent implements OnInit, OnChanges {
     ) {}
 
     ngOnInit(): void {
-        // Ottieni l'userId dall'AuthService
         const currentUser = this.authService.currentUserValue;
         if (currentUser) {
             this.currentUserId = currentUser.id;
@@ -110,7 +115,6 @@ export class FloorMapComponent implements OnInit, OnChanges {
         });
 
         console.log('DeskPositions created:', this.deskPositions.length);
-        console.log('Sample positions:', this.deskPositions.slice(0, 3));
     }
 
     onDeskClick(deskPosition: DeskPosition): void {
@@ -120,22 +124,23 @@ export class FloorMapComponent implements OnInit, OnChanges {
 
         this.selectedDesk = deskPosition.desk;
         console.log("SELECTED DESK:", this.selectedDesk);
-        this.openConfirmModal();
+        this.openConfirmBookingModal();
     }
 
-    openConfirmModal(): void {
+    openConfirmBookingModal(): void {
+        if (!this.confirmModal) return;
+
         this.modalRef = this.modalService.open(this.confirmModal, {
-            centered: true
+            centered: true,
+            backdrop: 'static'
         });
     }
 
     confirmBooking(): void {
         if (!this.selectedDesk || !this.selectedDate) return;
 
-        // Verifica che l'utente sia autenticato
         if (!this.authService.isAuthenticated) {
-            alert('Devi essere autenticato per prenotare una postazione');
-            this.modalRef?.close();
+            this.showError('Devi essere autenticato per prenotare una postazione');
             return;
         }
 
@@ -146,24 +151,50 @@ export class FloorMapComponent implements OnInit, OnChanges {
         };
 
         console.log('Creazione prenotazione con userId:', this.currentUserId);
-        console.log('Request:', request);
 
         this.bookingService.createBooking(this.currentUserId, request).subscribe({
             next: (booking) => {
                 console.log('Prenotazione creata con successo:', booking);
-                alert('Prenotazione effettuata con successo!');
                 this.modalRef?.close();
+                this.showSuccess('Prenotazione effettuata con successo!');
                 this.loadDesks();
             },
             error: (error) => {
                 console.error('Errore nella prenotazione:', error);
-                alert('Errore nella creazione della prenotazione. Riprova.');
+                this.modalRef?.close();
+                this.showError('Errore nella creazione della prenotazione. Riprova.');
             }
         });
     }
 
     cancelBooking(): void {
         this.selectedDesk = undefined;
+        this.modalRef?.close();
+    }
+
+    showSuccess(message: string): void {
+        this.modalTitle = 'Operazione completata';
+        this.modalMessage = message;
+        this.modalIcon = 'bi-check-circle-fill text-success';
+        if (this.successModal) {
+            this.modalRef = this.modalService.open(this.successModal, {
+                centered: true
+            });
+        }
+    }
+
+    showError(message: string): void {
+        this.modalTitle = 'Errore';
+        this.modalMessage = message;
+        this.modalIcon = 'bi-x-circle-fill text-danger';
+        if (this.errorModal) {
+            this.modalRef = this.modalService.open(this.errorModal, {
+                centered: true
+            });
+        }
+    }
+
+    closeModal(): void {
         this.modalRef?.close();
     }
 
