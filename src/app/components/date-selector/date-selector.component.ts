@@ -20,6 +20,7 @@ export class DateSelectorComponent implements OnInit {
     maxDate: NgbDateStruct;
     holidays: CompanyHoliday[] = []; // Festività caricate dal backend
     loadingHolidays = false;
+    private readonly WORKING_DAYS_LIMIT = 7; // Numero di giorni lavorativi da mostrare
 
     constructor(private holidayService: CompanyHolidayService) {
         const today = new Date();
@@ -34,18 +35,18 @@ export class DateSelectorComponent implements OnInit {
         // Imposta min date (oggi)
         this.minDate = this.selectedDate;
 
-        // Imposta max date a 3 mesi da oggi
-        const maxDateObj = new Date();
-        maxDateObj.setMonth(maxDateObj.getMonth() + 3);
+        // Max date temporaneo - sarà ricalcolato dopo aver caricato le festività
+        const tempMaxDateObj = new Date();
+        tempMaxDateObj.setDate(tempMaxDateObj.getDate() + 30); // Range temporaneo ampio
         this.maxDate = {
-            year: maxDateObj.getFullYear(),
-            month: maxDateObj.getMonth() + 1,
-            day: maxDateObj.getDate()
+            year: tempMaxDateObj.getFullYear(),
+            month: tempMaxDateObj.getMonth() + 1,
+            day: tempMaxDateObj.getDate()
         };
     }
 
     ngOnInit(): void {
-        // Carica le festività
+        // Carica le festività e poi calcola il max date
         this.loadHolidays();
 
         // Emetti la data corrente all'inizializzazione per preselezionarla
@@ -56,23 +57,62 @@ export class DateSelectorComponent implements OnInit {
     loadHolidays(): void {
         this.loadingHolidays = true;
 
-        // Calcola range: da oggi a 3 mesi
+        // Calcola range: da oggi a 30 giorni (per essere sicuri di coprire 7 giorni lavorativi)
         const startDate = this.formatDate(new Date(this.minDate.year, this.minDate.month - 1, this.minDate.day));
-        const endDate = this.formatDate(new Date(this.maxDate.year, this.maxDate.month - 1, this.maxDate.day));
+        const tempEndDate = new Date();
+        tempEndDate.setDate(tempEndDate.getDate() + 30);
+        const endDate = this.formatDate(tempEndDate);
 
         this.holidayService.getHolidaysBetween(startDate, endDate).subscribe({
             next: (holidays) => {
                 this.holidays = holidays;
                 this.loadingHolidays = false;
                 console.log('Festività caricate:', this.holidays.length);
+
+                // Ricalcola il max date basandosi sui giorni lavorativi
+                this.calculateMaxDate();
             },
             error: (error) => {
                 console.error('Errore caricamento festività:', error);
                 this.loadingHolidays = false;
                 // Continua senza festività in caso di errore
                 this.holidays = [];
+
+                // Ricalcola il max date anche in caso di errore
+                this.calculateMaxDate();
             }
         });
+    }
+
+    /**
+     * Calcola il max date come 7 giorni lavorativi dalla data corrente
+     */
+    private calculateMaxDate(): void {
+        const startDate = new Date(this.minDate.year, this.minDate.month - 1, this.minDate.day);
+        let workingDaysCount = 0;
+        let currentDate = new Date(startDate);
+
+        // Continua ad aggiungere giorni finché non raggiungiamo 7 giorni lavorativi
+        while (workingDaysCount < this.WORKING_DAYS_LIMIT) {
+            // Verifica se il giorno corrente è lavorativo
+            if (!this.isWeekend(currentDate) && !this.isHoliday(currentDate)) {
+                workingDaysCount++;
+            }
+
+            // Se non abbiamo ancora raggiunto 7 giorni lavorativi, vai al giorno successivo
+            if (workingDaysCount < this.WORKING_DAYS_LIMIT) {
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+        }
+
+        // Imposta il max date
+        this.maxDate = {
+            year: currentDate.getFullYear(),
+            month: currentDate.getMonth() + 1,
+            day: currentDate.getDate()
+        };
+
+        console.log('Max date calcolato (7 giorni lavorativi):', this.formatDate(currentDate));
     }
 
     onDateChange(date: NgbDateStruct): void {
@@ -114,7 +154,18 @@ export class DateSelectorComponent implements OnInit {
      */
     private isHoliday(date: Date): boolean {
         const dateString = this.formatDate(date);
-        return this.holidays.some(h => h.date === dateString);
+
+        return this.holidays.some(h => {
+            // Se la festività è ricorrente, confronta solo giorno e mese
+            if (h.recurring) {
+                const holidayDate = new Date(h.date);
+                return date.getMonth() === holidayDate.getMonth() &&
+                    date.getDate() === holidayDate.getDate();
+            }
+
+            // Altrimenti confronta la data completa
+            return h.date === dateString;
+        });
     }
 
     /**
