@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CompanyHoliday, CreateCompanyHolidayRequest, HolidayType, HolidayTypeLabels } from '../../models/company-holiday.model';
 import { CompanyHolidayService } from '../../services/company-holiday.service';
+import { ModalService } from '../../services/modal.service';
 import { NgbModal, NgbModalRef, NgbDatepickerModule, NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
@@ -45,7 +46,8 @@ export class HolidaysAdminComponent implements OnInit {
 
   constructor(
     private holidayService: CompanyHolidayService,
-    private modalService: NgbModal
+    private modalService: ModalService,
+    private ngbModalService: NgbModal
   ) {
     // Genera anni per filtro (anno corrente ± 2 anni)
     const currentYear = new Date().getFullYear();
@@ -71,7 +73,7 @@ export class HolidaysAdminComponent implements OnInit {
       error: (error) => {
         console.error('Errore nel caricamento delle festività:', error);
         this.loading = false;
-        alert('Errore nel caricamento delle festività');
+        this.modalService.showError('Errore nel caricamento delle festività');
       }
     });
   }
@@ -94,7 +96,7 @@ export class HolidaysAdminComponent implements OnInit {
       recurring: false
     };
     this.selectedDate = undefined;
-    this.modalRef = this.modalService.open(this.holidayModal, { centered: true, size: 'lg' });
+    this.modalRef = this.ngbModalService.open(this.holidayModal, { centered: true, size: 'lg' });
   }
 
   openEditModal(holiday: CompanyHoliday): void {
@@ -113,7 +115,7 @@ export class HolidaysAdminComponent implements OnInit {
       month: date.getMonth() + 1,
       day: date.getDate()
     };
-    this.modalRef = this.modalService.open(this.holidayModal, { centered: true, size: 'lg' });
+    this.modalRef = this.ngbModalService.open(this.holidayModal, { centered: true, size: 'lg' });
   }
 
   onDateSelect(date: NgbDateStruct): void {
@@ -123,7 +125,7 @@ export class HolidaysAdminComponent implements OnInit {
 
   saveHoliday(): void {
     if (!this.holidayForm.date || !this.holidayForm.name) {
-      alert('Compila tutti i campi obbligatori');
+      this.modalService.showWarning('Compila tutti i campi obbligatori');
       return;
     }
 
@@ -131,44 +133,51 @@ export class HolidaysAdminComponent implements OnInit {
       // Update
       this.holidayService.updateHoliday(this.currentHolidayId, this.holidayForm).subscribe({
         next: () => {
-          alert('Festività aggiornata con successo');
+          this.modalService.showSuccess('Festività aggiornata con successo');
           this.modalRef?.close();
           this.loadHolidays();
         },
         error: (error) => {
           console.error('Errore aggiornamento:', error);
-          alert(error.error?.message || 'Errore durante l\'aggiornamento');
+          this.modalService.showError(error.error?.message || 'Errore durante l\'aggiornamento');
         }
       });
     } else {
       // Create
       this.holidayService.createHoliday(this.holidayForm).subscribe({
         next: () => {
-          alert('Festività creata con successo');
+          this.modalService.showSuccess('Festività creata con successo');
           this.modalRef?.close();
           this.loadHolidays();
         },
         error: (error) => {
           console.error('Errore creazione:', error);
-          alert(error.error?.message || 'Errore durante la creazione');
+          this.modalService.showError(error.error?.message || 'Errore durante la creazione');
         }
       });
     }
   }
 
-  deleteHoliday(holiday: CompanyHoliday): void {
-    if (!confirm(`Sei sicuro di voler eliminare "${holiday.name}"?`)) {
+  async deleteHoliday(holiday: CompanyHoliday): Promise<void> {
+    const confirmed = await this.modalService.showConfirm(
+      `Sei sicuro di voler eliminare "${holiday.name}"?`,
+      'Conferma Eliminazione',
+      'Elimina',
+      'Annulla'
+    );
+
+    if (!confirmed) {
       return;
     }
 
     this.holidayService.deleteHoliday(holiday.id).subscribe({
       next: () => {
-        alert('Festività eliminata con successo');
+        this.modalService.showSuccess('Festività eliminata con successo');
         this.loadHolidays();
       },
       error: (error) => {
         console.error('Errore eliminazione:', error);
-        alert('Errore durante l\'eliminazione');
+        this.modalService.showError('Errore durante l\'eliminazione');
       }
     });
   }

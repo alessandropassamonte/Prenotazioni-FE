@@ -130,7 +130,7 @@
         <p>Vuoi prenotare la postazione <strong>{{ selectedDesk?.deskNumber }}</strong>?</p>
         <div class="desk-info">
             <p class="mb-1"><strong>Piano:</strong> {{ floor?.name }}</p>
-            <p class="mb-1"><strong>Dipartimento:</strong> {{ selectedDesk?.departmentName || 'N/A' }}</p>
+            <p class="mb-1"><strong>Dipartimento:</strong> <strong>{{ selectedDesk?.notes}}</strong></p>
             <p class="mb-0"><strong>Data:</strong> {{ selectedDate | date: 'dd/MM/yyyy' }}</p>
         </div>
     </div>

@@ -1,0 +1,29 @@
+<div class="modal-header">
+  <h5 class="modal-title">
+    <i *ngIf="options.icon" [class]="options.icon" class="me-2"></i>
+    {{ options.title }}
+  </h5>
+  <button type="button" class="btn-close" aria-label="Close" (click)="onClose()"></button>
+</div>
+
+<div class="modal-body">
+  <p class="mb-0">{{ options.message }}</p>
+</div>
+
+<div class="modal-footer">
+  <ng-container *ngIf="isConfirmModal; else singleButton">
+    <button type="button" class="btn btn-secondary" (click)="onCancel()">
+      {{ options.cancelText || 'Annulla' }}
+    </button>
+    <button type="button" class="btn btn-primary" (click)="onConfirm()">
+      {{ options.confirmText || 'Conferma' }}
+    </button>
+  </ng-container>
+
+  <ng-template #singleButton>
+    <button type="button" class="btn btn-primary" (click)="onClose()">
+      {{ options.confirmText || 'OK' }}
+    </button>
+  </ng-template>
+</div>
+

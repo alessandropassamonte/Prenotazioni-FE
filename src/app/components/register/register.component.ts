@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService, RegisterRequest } from '../../services/auth.service';
+import { ModalService } from '../../services/modal.service';
 
 @Component({
     selector: 'app-register',
@@ -32,7 +33,8 @@ export class RegisterComponent {
     constructor(
         private formBuilder: FormBuilder,
         private authService: AuthService,
-        private router: Router
+        private router: Router,
+        private modalService: ModalService
     ) {
         // Redirect alla home se già autenticato
         if (this.authService.isAuthenticated) {
@@ -75,7 +77,7 @@ export class RegisterComponent {
         return this.registerForm.controls;
     }
 
-    onSubmit(): void {
+    async onSubmit(): Promise<void> {
         // Reset errore
         this.error = '';
         this.success = false;
@@ -85,6 +87,7 @@ export class RegisterComponent {
             Object.keys(this.registerForm.controls).forEach(key => {
                 this.registerForm.get(key)?.markAsTouched();
             });
+            this.modalService.showWarning('Compila correttamente tutti i campi richiesti');
             return;
         }
 
@@ -101,27 +104,29 @@ export class RegisterComponent {
         };
 
         this.authService.register(cleanedData).subscribe({
-            next: () => {
+            next: async () => {
                 // Registrazione effettuata con successo
                 this.success = true;
-                setTimeout(() => {
-                    this.router.navigate(['/']);
-                }, 1500);
+                await this.modalService.showSuccess('Registrazione completata con successo! Verrai reindirizzato alla home.');
+                this.router.navigate(['/']);
             },
             error: (err) => {
                 // Gestisci errore
                 console.error('Errore registrazione:', err);
 
+                let errorMessage = 'Si è verificato un errore. Riprova più tardi.';
+
                 if (err.status === 409) {
-                    this.error = 'Email già registrata. Prova ad effettuare il login.';
+                    errorMessage = 'Email già registrata. Prova ad effettuare il login.';
                 } else if (err.status === 400) {
-                    this.error = err.error?.message || 'Dati non validi. Controlla i campi e riprova.';
+                    errorMessage = err.error?.message || 'Dati non validi. Controlla i campi e riprova.';
                 } else if (err.status === 0) {
-                    this.error = 'Impossibile connettersi al server. Verifica che il backend sia attivo.';
-                } else {
-                    this.error = err.error?.message || 'Si è verificato un errore. Riprova più tardi.';
+                    errorMessage = 'Impossibile connettersi al server. Verifica che il backend sia attivo.';
+                } else if (err.error?.message) {
+                    errorMessage = err.error.message;
                 }
 
+                this.modalService.showError(errorMessage, 'Errore di registrazione');
                 this.loading = false;
             }
         });

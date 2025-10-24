@@ -5,6 +5,7 @@ import { Booking, BookingType, CreateBookingRequest } from '../../models/booking
 import { DeskService } from '../../services/desk.service';
 import { BookingService } from '../../services/booking.service';
 import { AuthService } from '../../services/auth.service';
+import { ModalService } from '../../services/modal.service';
 import { NgbTooltipModule, NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 
 interface DeskPosition {
@@ -70,7 +71,8 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
         private deskService: DeskService,
         private bookingService: BookingService,
         private authService: AuthService,
-        private modalService: NgbModal
+        private modalServiceNgb: NgbModal,
+        private modalService: ModalService
     ) {}
 
     ngOnInit(): void {
@@ -211,7 +213,7 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
         if (this.existingBooking) {
             // Se sta cliccando sulla sua postazione, non fare nulla
             if (this.existingBooking.deskId === deskPosition.desk.id) {
-                alert('Hai già prenotato questa postazione per questa data!');
+                this.modalService.showInfo('Hai già prenotato questa postazione per questa data!');
                 return;
             }
             // Altrimenti apri il modale di modifica
@@ -225,19 +227,19 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
     }
 
     openConfirmModal(): void {
-        this.modalRef = this.modalService.open(this.confirmModal, {
+        this.modalRef = this.modalServiceNgb.open(this.confirmModal, {
             centered: true
         });
     }
 
     openModifyModal(): void {
-        this.modalRef = this.modalService.open(this.modifyModal, {
+        this.modalRef = this.modalServiceNgb.open(this.modifyModal, {
             centered: true
         });
     }
 
     openUserInfoModal(): void {
-        this.modalRef = this.modalService.open(this.userInfoModal, {
+        this.modalRef = this.modalServiceNgb.open(this.userInfoModal, {
             centered: true
         });
     }
@@ -246,7 +248,7 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
         if (!this.selectedDesk || !this.selectedDate) return;
 
         if (!this.authService.isAuthenticated) {
-            alert('Devi essere autenticato per prenotare una postazione');
+            this.modalService.showWarning('Devi essere autenticato per prenotare una postazione');
             this.modalRef?.close();
             return;
         }
@@ -262,13 +264,13 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
         this.bookingService.createBooking(this.currentUserId, request).subscribe({
             next: (booking) => {
                 console.log('Prenotazione creata con successo:', booking);
-                alert('Prenotazione effettuata con successo!');
+                this.modalService.showSuccess('Prenotazione effettuata con successo!');
                 this.modalRef?.close();
                 this.loadDesks();
             },
             error: (error) => {
-                console.log( error);
-                alert(error?.message);
+                console.error('Errore prenotazione:', error);
+                this.modalService.showError(error?.message || 'Errore durante la prenotazione');
             }
         });
     }
@@ -292,20 +294,20 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
                 this.bookingService.createBooking(this.currentUserId, request).subscribe({
                     next: (booking) => {
                         console.log('Nuova prenotazione creata con successo:', booking);
-                        alert('Prenotazione modificata con successo!');
+                        this.modalService.showSuccess('Prenotazione modificata con successo!');
                         this.modalRef?.close();
                         this.existingBooking = undefined;
                         this.loadDesks();
                     },
                     error: (error) => {
                         console.error('Errore nella creazione della nuova prenotazione:', error);
-                        alert(error?.message);
+                        this.modalService.showError(error?.message || 'Errore nella creazione della nuova prenotazione');
                     }
                 });
             },
             error: (error) => {
                 console.error('Errore nella cancellazione della prenotazione precedente:', error);
-                alert(error?.message);
+                this.modalService.showError(error?.message || 'Errore nella cancellazione della prenotazione precedente');
             }
         });
     }
@@ -331,128 +333,101 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
 
     getDeskTooltip(deskPosition: DeskPosition): string {
         if (deskPosition.bookedByCurrentUser) {
-            return `${deskPosition.desk.deskNumber} - La tua prenotazione`;
+            return `Postazione ${deskPosition.desk.deskNumber} - La tua prenotazione`;
         }
-        const status = deskPosition.available ? 'Disponibile' : 'Occupata';
-        return `${deskPosition.desk.deskNumber} - ${status}`;
+        if (!deskPosition.available && deskPosition.booking) {
+            return `Postazione ${deskPosition.desk.deskNumber} - Occupata da ${deskPosition.booking.userName}`;
+        }
+        if (deskPosition.available) {
+            return `Postazione ${deskPosition.desk.deskNumber} - Disponibile`;
+        }
+        return `Postazione ${deskPosition.desk.deskNumber}`;
     }
 
-    private formatDate(date: Date): string {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+    // Zoom Methods
+    zoomIn(): void {
+        if (this.zoomLevel < this.maxZoom) {
+            this.zoomLevel = Math.min(this.zoomLevel + 0.2, this.maxZoom);
+            this.updateViewBox();
+        }
     }
 
-    private getDefaultPosition(deskNumber: string): { x: number; y: number } {
-        const num = parseInt(deskNumber.replace(/\D/g, '')) || 0;
-        return {
-            x: 100 + (num % 10) * 80,
-            y: 100 + Math.floor(num / 10) * 80
-        };
+    zoomOut(): void {
+        if (this.zoomLevel > this.minZoom) {
+            this.zoomLevel = Math.max(this.zoomLevel - 0.2, this.minZoom);
+            this.updateViewBox();
+        }
     }
 
-    private setupZoomListeners(): void {
-        if (!this.svgElement) return;
-
-        const svg = this.svgElement.nativeElement;
-
-        // Previeni il comportamento di default del browser per il pinch-zoom
-        svg.addEventListener('touchstart', (e) => {
-            if (e.touches.length > 1) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-
-        svg.addEventListener('touchmove', (e) => {
-            if (e.touches.length > 1) {
-                e.preventDefault();
-            }
-        }, { passive: false });
+    resetZoom(): void {
+        this.zoomLevel = 1;
+        this.viewBoxX = 0;
+        this.viewBoxY = 0;
+        this.updateViewBox();
     }
 
+    getTransform(): string {
+        return `scale(${this.zoomLevel})`;
+    }
+
+    getViewBox(): string {
+        return `${this.viewBoxX} ${this.viewBoxY} ${this.viewBoxWidth} ${this.viewBoxHeight}`;
+    }
+
+    updateViewBox(): void {
+        const scale = 1 / this.zoomLevel;
+        this.viewBoxWidth = 1200 * scale;
+        this.viewBoxHeight = 848 * scale;
+    }
+
+    // Wheel Zoom
     onWheel(event: WheelEvent): void {
         event.preventDefault();
-
         const delta = event.deltaY > 0 ? -0.1 : 0.1;
         const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoomLevel + delta));
 
-        if (newZoom === this.zoomLevel) return;
-
-        // Calcola il punto del mouse nell'SVG
-        const svg = this.svgElement?.nativeElement;
-        if (!svg) return;
-
-        const rect = svg.getBoundingClientRect();
-        const mouseX = ((event.clientX - rect.left) / rect.width) * this.viewBoxWidth + this.viewBoxX;
-        const mouseY = ((event.clientY - rect.top) / rect.height) * this.viewBoxHeight + this.viewBoxY;
-
-        this.zoomToPoint(newZoom, mouseX, mouseY);
+        if (newZoom !== this.zoomLevel) {
+            this.zoomLevel = newZoom;
+            this.updateViewBox();
+        }
     }
 
+    // Touch Events
     onTouchStart(event: TouchEvent): void {
         if (event.touches.length === 2) {
-            // Pinch-to-zoom inizia
+            event.preventDefault();
             const touch1 = event.touches[0];
             const touch2 = event.touches[1];
-
             this.lastTouchDistance = this.getTouchDistance(touch1, touch2);
             this.lastTouchCenter = this.getTouchCenter(touch1, touch2);
-        } else if (event.touches.length === 1 && this.zoomLevel > 1) {
-            // Pan inizia
-            this.isPanning = true;
+        } else if (event.touches.length === 1) {
             const touch = event.touches[0];
-            const svg = this.svgElement?.nativeElement;
-            if (!svg) return;
-
-            const rect = svg.getBoundingClientRect();
-            this.startPanX = ((touch.clientX - rect.left) / rect.width) * this.viewBoxWidth + this.viewBoxX;
-            this.startPanY = ((touch.clientY - rect.top) / rect.height) * this.viewBoxHeight + this.viewBoxY;
+            this.isPanning = true;
+            this.startPanX = touch.clientX - this.viewBoxX;
+            this.startPanY = touch.clientY - this.viewBoxY;
         }
     }
 
     onTouchMove(event: TouchEvent): void {
         if (event.touches.length === 2) {
-            // Pinch-to-zoom
+            event.preventDefault();
             const touch1 = event.touches[0];
             const touch2 = event.touches[1];
-
-            const currentDistance = this.getTouchDistance(touch1, touch2);
-            const currentCenter = this.getTouchCenter(touch1, touch2);
+            const distance = this.getTouchDistance(touch1, touch2);
 
             if (this.lastTouchDistance > 0) {
-                const scale = currentDistance / this.lastTouchDistance;
+                const scale = distance / this.lastTouchDistance;
                 const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoomLevel * scale));
-
-                const svg = this.svgElement?.nativeElement;
-                if (!svg) return;
-
-                const rect = svg.getBoundingClientRect();
-                const centerX = ((currentCenter.x - rect.left) / rect.width) * this.viewBoxWidth + this.viewBoxX;
-                const centerY = ((currentCenter.y - rect.top) / rect.height) * this.viewBoxHeight + this.viewBoxY;
-
-                this.zoomToPoint(newZoom, centerX, centerY);
+                this.zoomLevel = newZoom;
+                this.updateViewBox();
             }
 
-            this.lastTouchDistance = currentDistance;
-            this.lastTouchCenter = currentCenter;
+            this.lastTouchDistance = distance;
         } else if (event.touches.length === 1 && this.isPanning) {
-            // Pan
+            event.preventDefault();
             const touch = event.touches[0];
-            const svg = this.svgElement?.nativeElement;
-            if (!svg) return;
-
-            const rect = svg.getBoundingClientRect();
-            const currentX = ((touch.clientX - rect.left) / rect.width) * this.viewBoxWidth + this.viewBoxX;
-            const currentY = ((touch.clientY - rect.top) / rect.height) * this.viewBoxHeight + this.viewBoxY;
-
-            const deltaX = this.startPanX - currentX;
-            const deltaY = this.startPanY - currentY;
-
-            this.viewBoxX += deltaX;
-            this.viewBoxY += deltaY;
-
-            this.constrainViewBox();
+            this.viewBoxX = touch.clientX - this.startPanX;
+            this.viewBoxY = touch.clientY - this.startPanY;
         }
     }
 
@@ -465,34 +440,21 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
         }
     }
 
+    // Mouse Events
     onMouseDown(event: MouseEvent): void {
         if (this.zoomLevel > 1) {
             this.isPanning = true;
-            const svg = this.svgElement?.nativeElement;
-            if (!svg) return;
-
-            const rect = svg.getBoundingClientRect();
-            this.startPanX = ((event.clientX - rect.left) / rect.width) * this.viewBoxWidth + this.viewBoxX;
-            this.startPanY = ((event.clientY - rect.top) / rect.height) * this.viewBoxHeight + this.viewBoxY;
+            this.startPanX = event.clientX - this.viewBoxX;
+            this.startPanY = event.clientY - this.viewBoxY;
+            event.preventDefault();
         }
     }
 
     onMouseMove(event: MouseEvent): void {
         if (this.isPanning && this.zoomLevel > 1) {
-            const svg = this.svgElement?.nativeElement;
-            if (!svg) return;
-
-            const rect = svg.getBoundingClientRect();
-            const currentX = ((event.clientX - rect.left) / rect.width) * this.viewBoxWidth + this.viewBoxX;
-            const currentY = ((event.clientY - rect.top) / rect.height) * this.viewBoxHeight + this.viewBoxY;
-
-            const deltaX = this.startPanX - currentX;
-            const deltaY = this.startPanY - currentY;
-
-            this.viewBoxX += deltaX;
-            this.viewBoxY += deltaY;
-
-            this.constrainViewBox();
+            this.viewBoxX = event.clientX - this.startPanX;
+            this.viewBoxY = event.clientY - this.startPanY;
+            event.preventDefault();
         }
     }
 
@@ -504,59 +466,7 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
         this.isPanning = false;
     }
 
-    resetZoom(): void {
-        this.zoomLevel = 1;
-        this.viewBoxX = 0;
-        this.viewBoxY = 0;
-        this.viewBoxWidth = 1200;
-        this.viewBoxHeight = 848;
-    }
-
-    zoomIn(): void {
-        const newZoom = Math.min(this.maxZoom, this.zoomLevel + 0.3);
-        this.zoomToPoint(newZoom, this.viewBoxX + this.viewBoxWidth / 2, this.viewBoxY + this.viewBoxHeight / 2);
-    }
-
-    zoomOut(): void {
-        const newZoom = Math.max(this.minZoom, this.zoomLevel - 0.3);
-        this.zoomToPoint(newZoom, this.viewBoxX + this.viewBoxWidth / 2, this.viewBoxY + this.viewBoxHeight / 2);
-    }
-
-    private zoomToPoint(newZoom: number, focusX: number, focusY: number): void {
-        const baseWidth = 1200;
-        const baseHeight = 848;
-
-        const newWidth = baseWidth / newZoom;
-        const newHeight = baseHeight / newZoom;
-
-        // Mantieni il punto focale nella stessa posizione relativa
-        const relativeX = (focusX - this.viewBoxX) / this.viewBoxWidth;
-        const relativeY = (focusY - this.viewBoxY) / this.viewBoxHeight;
-
-        this.viewBoxX = focusX - relativeX * newWidth;
-        this.viewBoxY = focusY - relativeY * newHeight;
-        this.viewBoxWidth = newWidth;
-        this.viewBoxHeight = newHeight;
-        this.zoomLevel = newZoom;
-
-        this.constrainViewBox();
-    }
-
-    private constrainViewBox(): void {
-        const baseWidth = 1200;
-        const baseHeight = 848;
-
-        // Impedisce di andare oltre i bordi
-        if (this.viewBoxX < 0) this.viewBoxX = 0;
-        if (this.viewBoxY < 0) this.viewBoxY = 0;
-        if (this.viewBoxX + this.viewBoxWidth > baseWidth) {
-            this.viewBoxX = baseWidth - this.viewBoxWidth;
-        }
-        if (this.viewBoxY + this.viewBoxHeight > baseHeight) {
-            this.viewBoxY = baseHeight - this.viewBoxHeight;
-        }
-    }
-
+    // Touch Helper Methods
     private getTouchDistance(touch1: Touch, touch2: Touch): number {
         const dx = touch1.clientX - touch2.clientX;
         const dy = touch1.clientY - touch2.clientY;
@@ -570,15 +480,26 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
         };
     }
 
-    getViewBox(): string {
-        return `${this.viewBoxX} ${this.viewBoxY} ${this.viewBoxWidth} ${this.viewBoxHeight}`;
+    setupZoomListeners(): void {
+        // Additional setup if needed
     }
 
-    getTransform(): string {
-        // Calcola la trasformazione CSS per sincronizzare lo zoom dell'immagine di sfondo
-        const scaleX = -this.viewBoxX / this.viewBoxWidth * 100;
-        const scaleY = -this.viewBoxY / this.viewBoxHeight * 100;
-        return `scale(${this.zoomLevel}) translate(${scaleX}%, ${scaleY}%)`;
+    // Format Date Helper
+    private formatDate(date: Date): string {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // Default Position Helper
+    private getDefaultPosition(deskNumber: string): { x: number; y: number } {
+        // Fallback position based on desk number
+        const num = parseInt(deskNumber.replace(/\D/g, '')) || 0;
+        return {
+            x: 100 + (num % 10) * 50,
+            y: 100 + Math.floor(num / 10) * 50
+        };
     }
 
     // ============================================================================
@@ -629,40 +550,40 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
         layout['38'] = { x: 1013.1, y: 631.7  };
         layout['39'] = { x: 980.6, y: 657.2 };
         layout['40'] = { x: 1013.1, y: 657.2 };
-        layout['41'] = { x: 885.1, y: 742.7 };
-        layout['42'] = { x: 886.9, y: 772.5 };
+        layout['41'] = { x: 885.1, y:740.9 };
+        layout['42'] = { x: 885.1, y: 773.4 };
         layout['43'] = { x: 846.3, y: 740.9 };
-        layout['44'] = { x: 846.3, y: 775.2 };
-        layout['45'] = { x: 823.8, y: 736.4 };
-        layout['46'] = { x: 825.6, y: 774.3 };
-        layout['47'] = { x: 763.4, y: 743.6 };
-        layout['48'] = { x: 761.6, y: 776.1 };
-        layout['49'] = { x: 743.6, y: 744.5 };
-        layout['50'] = { x: 743.6, y: 776.1 };
+        layout['44'] = { x: 846.3, y: 773.4 };
+        layout['45'] = { x: 823.8, y: 740.9 };
+        layout['46'] = { x: 825.6, y: 773.4 };
+        layout['47'] = { x: 763.4, y: 740.9 };
+        layout['48'] = { x: 761.6, y: 773.4 };
+        layout['49'] = { x: 743.6, y: 740.9 };
+        layout['50'] = { x: 743.6, y: 773.4};
         layout['51'] = { x: 678.7, y: 740.9 };
         layout['52'] = { x: 679.6, y: 773.4 };
         layout['53'] = { x: 659.8, y: 740.9 };
         layout['54'] = { x: 659.8, y: 773.4 };
-        layout['55'] = { x: 536.3, y: 657.2 };
-        layout['56'] = { x: 568.8, y: 657.2 };
-        layout['57'] = { x: 535.4, y: 637.3 };
-        layout['58'] = { x: 568.8, y: 635.5 };
-        layout['59'] = { x: 533.6, y: 565.3 };
-        layout['60'] = { x: 567.0, y: 565.3 };
-        layout['61'] = { x: 533.6, y: 545.5 };
-        layout['62'] = { x: 567.0, y: 544.6 };
-        layout['63'] = { x: 532.7, y: 472.5 };
-        layout['64'] = { x: 563.3, y: 472.5 };
-        layout['65'] = { x: 531.8, y: 452.7 };
-        layout['66'] = { x: 567.9, y: 450.9 };
-        layout['67'] = { x: 529.1, y: 382.4 };
-        layout['68'] = { x: 567.0, y: 383.3 };
-        layout['69'] = { x: 533.6, y: 363.5 };
-        layout['70'] = { x: 567.9, y: 363.5 };
-        layout['71'] = { x: 530.0, y: 294.1 };
+        layout['55'] = { x: 534.5, y: 657.2 };
+        layout['56'] = { x: 567.0, y: 657.2 };
+        layout['57'] = { x: 534.5, y: 631.5 };
+        layout['58'] = { x: 567.0, y: 631.5 };
+        layout['59'] = { x: 534.5, y: 566.5 };
+        layout['60'] = { x: 567.0, y: 566.5 };
+        layout['61'] = { x: 534.5, y: 541.6 };
+        layout['62'] = { x: 567.0, y: 541.6 };
+        layout['63'] = { x: 534.5, y: 472.5 };
+        layout['64'] = { x: 567.0, y: 472.5 };
+        layout['65'] = { x: 534.5, y: 447.9 };
+        layout['66'] = { x: 567.0, y: 447.9 };
+        layout['67'] = { x: 534.5, y: 384.4 };
+        layout['68'] = { x: 567.0, y: 384.3 };
+        layout['69'] = { x: 534.5, y: 359.5 };
+        layout['70'] = { x: 567.0, y: 359.5 };
+        layout['71'] = { x: 534.5, y: 294.1 };
         layout['72'] = { x: 567.0, y: 294.1 };
-        layout['73'] = { x: 534.5, y: 274.3 };
-        layout['74'] = { x: 569.7, y: 273.4 };
+        layout['73'] = { x: 534.5, y: 270.3 };
+        layout['74'] = { x: 567.0, y: 270.4 };
 
         return layout;
     }
@@ -674,87 +595,88 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
     private generateFloor3Layout(): { [deskNumber: string]: { x: number; y: number } } {
         const layout: { [deskNumber: string]: { x: number; y: number } } = {};
 
-        layout['1'] = { x: 544.4, y: 92.4 };
-        layout['2'] = { x: 544.4, y: 123.9 };
-        layout['3'] = { x: 559.7, y: 94.2 };
-        layout['4'] = { x: 562.4, y: 125.7 };
-        layout['5'] = { x: 625.5, y: 94.2 };
-        layout['6'] = { x: 627.3, y: 127.5 };
-        layout['7'] = { x: 648.1, y: 96.0 };
-        layout['8'] = { x: 646.3, y: 131.1 };
-        layout['9'] = { x: 708.5, y: 95.1 };
+        layout['1'] = { x: 541.4, y: 92.1 };
+        layout['2'] = { x: 541.4, y: 126.6 };
+        layout['3'] = { x: 567.7, y: 92.1 };
+        layout['4'] = { x: 567.4, y: 126.6 };
+        layout['5'] = { x: 621.5, y: 92.1 };
+        layout['6'] = { x: 621.5, y: 126.6 };
+        layout['7'] = { x: 648.1, y: 92.1 };
+        layout['8'] = { x: 646.3, y: 126.6 };
+        layout['9'] = { x: 706.7, y: 92.1 };
         layout['10'] = { x: 706.7, y: 126.6 };
-        layout['11'] = { x: 733.7, y: 94.2 };
-        layout['12'] = { x: 728.3, y: 123.0 };
-        layout['13'] = { x: 794.1, y: 92.4 };
-        layout['14'] = { x: 792.3, y: 125.7 };
-        layout['15'] = { x: 813.9, y: 95.1 };
-        layout['16'] = { x: 812.1, y: 128.4 };
-        layout['17'] = { x: 850.0, y: 272.5 };
-        layout['18'] = { x: 884.2, y: 272.5 };
-        layout['19'] = { x: 914.8, y: 273.4 };
-        layout['20'] = { x: 851.8, y: 293.2 };
-        layout['21'] = { x: 883.3, y: 293.2 };
+        layout['11'] = { x: 731.3, y: 92.1 };
+        layout['12'] = { x: 731.3, y: 126.6 };
+        layout['13'] = { x: 788.3, y: 92.1 };
+        layout['14'] = { x: 788.3, y: 126.6 };
+        layout['15'] = { x: 813.9, y: 92.1 };
+        layout['16'] = { x: 812.1, y: 126.6 };
+        layout['17'] = { x: 850.9, y: 267.5 };
+        layout['18'] = { x: 884.2, y: 267.5 };
+        layout['19'] = { x: 915.7, y: 267.5 };
+        layout['20'] = { x: 850.9, y: 293.2 };
+        layout['21'] = { x: 884.2, y: 293.2 };
         layout['22'] = { x: 915.7, y: 293.2 };
-        layout['23'] = { x: 854.5, y: 362.6 };
-        layout['24'] = { x: 886.0, y: 361.7 };
-        layout['25'] = { x: 917.6, y: 361.7 };
-        layout['26'] = { x: 850.0, y: 381.5 };
-        layout['27'] = { x: 886.0, y: 381.5 };
-        layout['28'] = { x: 918.5, y: 378.8 };
-        layout['29'] = { x: 849.1, y: 448.2 };
-        layout['30'] = { x: 884.2, y: 450.0 };
-        layout['31'] = { x: 916.6, y: 449.1 };
-        layout['32'] = { x: 850.9, y: 468.0 };
-        layout['33'] = { x: 884.2, y: 467.1 };
-        layout['34'] = { x: 918.5, y: 467.1 };
-        layout['35'] = { x: 877.9, y: 536.5 };
-        layout['36'] = { x: 910.3, y: 533.8 };
-        layout['37'] = { x: 877.0, y: 552.7 };
-        layout['38'] = { x: 909.4, y: 554.5 };
-        layout['39'] = { x: 877.0, y: 620.2 };
-        layout['40'] = { x: 911.2, y: 624.7 };
-        layout['41'] = { x: 878.8, y: 644.6 };
-        layout['42'] = { x: 911.2, y: 640.1 };
+        layout['23'] = { x: 850.9, y: 357.6 };
+        layout['24'] = { x: 884.2, y: 357.6 };
+        layout['25'] = { x: 915.7, y: 357.6 };
+        layout['26'] = { x: 850.9, y: 381.5 };
+        layout['27'] = { x: 884.2, y: 381.5 };
+        layout['28'] = { x: 915.7, y: 381.5 };
+        layout['29'] = { x: 850.9, y: 442.2 };
+        layout['30'] = { x: 884.2, y: 442.2 };
+        layout['31'] = { x: 915.7, y: 442.2 };
+        layout['32'] = { x: 850.9, y: 472.0 };
+        layout['33'] = { x: 884.2, y: 472.0 };
+        layout['34'] = { x: 915.7, y: 472.0 };
+        layout['35'] = { x: 876.9, y: 530.8 };
+        layout['36'] = { x: 910.3, y: 530.8 };
+        layout['37'] = { x: 876.9, y: 556.5 };
+        layout['38'] = { x: 910.3, y: 556.5 };
+        layout['39'] = { x: 876.9, y: 620.2 };
+        layout['40'] = { x: 910.3, y: 620.2 };
+        layout['41'] = { x: 876.9, y: 644.6 };
+        layout['42'] = { x: 910.3, y: 644.6 };
         layout['43'] = { x: 897.7, y: 696.8 };
         layout['44'] = { x: 896.8, y: 728.3 };
         layout['45'] = { x: 895.9, y: 761.7 };
-        layout['46'] = { x: 878.8, y: 695.9 };
-        layout['47'] = { x: 875.2, y: 727.4 };
-        layout['48'] = { x: 877.9, y: 760.8 };
-        layout['49'] = { x: 804.0, y: 722.9 };
+        layout['46'] = { x: 870.9, y: 696.8 };
+        layout['47'] = { x: 870.9, y: 728.3 };
+        layout['48'] = { x: 870.9, y: 761.7 };
+        layout['49'] = { x: 807.6, y: 722.9 };
         layout['50'] = { x: 807.6, y: 755.4 };
-        layout['51'] = { x: 783.3, y: 726.5 };
-        layout['52'] = { x: 784.2, y: 759.9 };
-        layout['53'] = { x: 548.9, y: 718.4 };
-        layout['54'] = { x: 551.6, y: 753.6 };
-        layout['55'] = { x: 532.7, y: 720.2 };
-        layout['56'] = { x: 538.1, y: 755.4 };
-        layout['57'] = { x: 466.9, y: 695.9 };
-        layout['58'] = { x: 466.0, y: 723.8 };
-        layout['59'] = { x: 465.1, y: 754.5 };
-        layout['60'] = { x: 448.0, y: 694.1 };
-        layout['61'] = { x: 448.0, y: 730.1 };
-        layout['62'] = { x: 445.3, y: 760.8 };
-        layout['63'] = { x: 439.0, y: 644.6 };
-        layout['64'] = { x: 473.2, y: 643.7 };
-        layout['65'] = { x: 438.1, y: 624.7 };
-        layout['66'] = { x: 476.8, y: 623.8 };
-        layout['67'] = { x: 439.9, y: 554.5 };
-        layout['68'] = { x: 472.3, y: 556.3 };
-        layout['69'] = { x: 504.8, y: 555.4 };
-        layout['70'] = { x: 439.0, y: 535.6 };
-        layout['71'] = { x: 472.3, y: 537.4 };
-        layout['72'] = { x: 502.1, y: 532.9 };
-        layout['73'] = { x: 437.2, y: 466.2 };
-        layout['74'] = { x: 474.1, y: 468.0 };
-        layout['75'] = { x: 444.4, y: 445.5 };
+        layout['51'] = { x: 781.3, y: 722.9 };
+        layout['52'] = { x: 781.3, y: 755.4 };
+        layout['53'] = { x: 554.6, y: 722.9 };
+        layout['54'] = { x: 554.6, y: 755.4 };
+        layout['55'] = { x: 528.7, y: 722.9 };
+        layout['56'] = { x: 528.7, y: 755.4 };
+        layout['57'] = { x: 468.9, y: 695.9 };
+        layout['58'] = { x: 468.9, y: 730.1 };
+        layout['59'] = { x: 468.9, y: 760.8 };
+        layout['60'] = { x: 442.3, y: 695.9 };
+        layout['61'] = { x: 442.3, y: 730.1 };
+        layout['62'] = { x: 442.3, y: 760.8 };
+        layout['63'] = { x: 438.1, y: 644.6 };
+        layout['64'] = { x: 472.3, y: 644.6 };
+        layout['65'] = { x: 438.1, y: 620.2 };
+        layout['66'] = { x: 472.3, y: 620.2 };
+        layout['67'] = { x: 438.1, y: 556.5 };
+        layout['68'] = { x: 472.3, y: 556.5 };
+        layout['69'] = { x: 502.1, y: 556.5 };
+        layout['70'] = { x: 438.1, y: 530.8 };
+        layout['71'] = { x: 472.3, y: 530.8 };
+        layout['72'] = { x: 502.1, y: 530.8 };
+        layout['73'] = { x: 438.1, y: 472.0 };
+        layout['74'] = { x: 472.3, y: 472.0 };
+        layout['75'] = { x: 438.1, y: 445.5 };
         layout['76'] = { x: 472.3, y: 445.5 };
-        layout['77'] = { x: 441.7, y: 373.4 };
-        layout['78'] = { x: 470.5, y: 373.4 };
-        layout['79'] = { x: 443.5, y: 352.7 };
-        layout['80'] = { x: 477.7, y: 352.7 };
+        layout['77'] = { x: 438.1, y: 377.4 };
+        layout['78'] = { x: 472.3, y: 377.4 };
+        layout['79'] = { x: 438.1, y: 352.7 };
+        layout['80'] = { x: 472.3, y: 352.7 };
 
         return layout;
+
     }
 }

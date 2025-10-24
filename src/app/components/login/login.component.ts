@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { ModalService } from '../../services/modal.service';
 
 @Component({
     selector: 'app-login',
@@ -21,7 +22,8 @@ export class LoginComponent implements OnInit {
         private formBuilder: FormBuilder,
         private authService: AuthService,
         private router: Router,
-        private route: ActivatedRoute
+        private route: ActivatedRoute,
+        private modalService: ModalService
     ) {
         // Redirect alla home se già autenticato
         if (this.authService.isAuthenticated) {
@@ -52,6 +54,7 @@ export class LoginComponent implements OnInit {
             Object.keys(this.loginForm.controls).forEach(key => {
                 this.loginForm.get(key)?.markAsTouched();
             });
+            this.modalService.showWarning('Compila correttamente tutti i campi richiesti');
             return;
         }
 
@@ -68,14 +71,17 @@ export class LoginComponent implements OnInit {
                 // Gestisci errore
                 console.error('Errore login:', err);
 
+                let errorMessage = 'Si è verificato un errore. Riprova più tardi.';
+
                 if (err.status === 401) {
-                    this.error = 'Email o password non corretti';
+                    errorMessage = 'Email o password non corretti';
                 } else if (err.status === 0) {
-                    this.error = 'Impossibile connettersi al server. Verifica che il backend sia attivo.';
-                } else {
-                    this.error = err.error?.message || 'Si è verificato un errore. Riprova più tardi.';
+                    errorMessage = 'Impossibile connettersi al server. Verifica che il backend sia attivo.';
+                } else if (err.error?.message) {
+                    errorMessage = err.error.message;
                 }
 
+                this.modalService.showError(errorMessage, 'Errore di autenticazione');
                 this.loading = false;
             }
         });
