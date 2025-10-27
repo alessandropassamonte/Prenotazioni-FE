@@ -69,6 +69,10 @@ export class BookingListComponent implements OnInit {
     // Status enum
     BookingStatus = BookingStatus;
 
+    // Limite giorni lavorativi
+    private readonly WORKING_DAYS_LIMIT = 7;
+    maxBookingDate: Date | null = null;
+
     constructor(
         private bookingService: BookingService,
         private authService: AuthService,
@@ -106,14 +110,37 @@ export class BookingListComponent implements OnInit {
         this.holidayService.getHolidaysBetween(startDate, endDate).subscribe({
             next: (holidays) => {
                 this.holidays = holidays;
+                this.calculateMaxBookingDate();
                 this.loadBookings();
             },
             error: (error) => {
                 console.error('Errore caricamento festività:', error);
                 this.holidays = [];
+                this.calculateMaxBookingDate();
                 this.loadBookings();
             }
         });
+    }
+
+    calculateMaxBookingDate(): void {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        let workingDaysCount = 0;
+        let currentDate = new Date(today);
+
+        while (workingDaysCount < this.WORKING_DAYS_LIMIT) {
+            if (!this.isWeekend(currentDate) && !this.isHoliday(currentDate)) {
+                workingDaysCount++;
+            }
+
+            if (workingDaysCount < this.WORKING_DAYS_LIMIT) {
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+        }
+
+        this.maxBookingDate = currentDate;
+        console.log('Max booking date (7 giorni lavorativi):', this.formatDate(currentDate));
     }
 
     loadBookings(): void {
@@ -222,6 +249,11 @@ export class BookingListComponent implements OnInit {
             const dateString = this.formatDate(date);
             const dayBookings = this.bookings.filter(b => b.bookingDate === dateString);
 
+            // Un giorno è lavorativo se non è weekend, non è festività, è >= oggi e <= maxBookingDate
+            const isWorkingDay = this.isWorkingDay(date) &&
+                                 date >= today &&
+                                 (!this.maxBookingDate || date <= this.maxBookingDate);
+
             this.calendarDays.push({
                 date: date,
                 isCurrentMonth: isCurrentMonth,
@@ -229,7 +261,7 @@ export class BookingListComponent implements OnInit {
                 isWeekend: this.isWeekend(date),
                 isHoliday: this.isHoliday(date),
                 bookings: dayBookings,
-                isWorkingDay: this.isWorkingDay(date) && date > today,
+                isWorkingDay: isWorkingDay,
                 isPast: date < today
             });
         }
