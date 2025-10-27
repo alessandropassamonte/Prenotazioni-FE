@@ -1,8 +1,10 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import {Component, OnInit, OnDestroy, HostListener, ViewChild} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterModule } from '@angular/router';
 import { AuthService, User } from './services/auth.service';
 import { Subscription } from 'rxjs';
+import {NgbModal, NgbModalRef} from "@ng-bootstrap/ng-bootstrap";
+import {ModalService} from "./services/modal.service";
 
 @Component({
     selector: 'app-root',
@@ -17,8 +19,11 @@ export class AppComponent implements OnInit, OnDestroy {
     currentUser: User | null = null;
     isDropdownOpen = false;
     private userSubscription?: Subscription;
+    modalRef?: NgbModalRef;
 
-    constructor(public authService: AuthService) {}
+    @ViewChild('confirmLogoutModal') confirmLogoutModal: any;
+
+    constructor(public authService: AuthService,  private modalServiceNgb: NgbModal) {}
 
     // Chiude il dropdown quando si clicca fuori
     @HostListener('document:click', ['$event'])
@@ -53,10 +58,27 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     logout(): void {
-        if (confirm('Sei sicuro di voler effettuare il logout?')) {
-            this.authService.logout();
-            this.closeDropdown();
-        }
+        this.closeDropdown();
+        // Chiudi il modale delle informazioni
+        this.modalRef?.close();
+
+        // Apri il modale di conferma
+        setTimeout(() => {
+            this.modalRef = this.modalServiceNgb.open(this.confirmLogoutModal, {
+                centered: true
+            });
+        }, 300);
+
+
+        // if (confirm('Sei sicuro di voler effettuare il logout?')) {
+        //     this.authService.logout();
+        //     this.closeDropdown();
+        // }
+    }
+
+    confirmLogout() : void {
+        this.modalRef?.close();
+        this.authService.logout();
     }
 
     getUserDisplayName(): string {

@@ -262,29 +262,29 @@
                 <span>{{ selectedBooking.userName }} ({{ selectedBooking.userEmail }})</span>
             </div>
 
-            <!-- Check-in -->
-            <div class="detail-row" *ngIf="selectedBooking.checkedInAt">
-                <strong><i class="bi bi-box-arrow-in-right"></i> Check-in:</strong>
-                <span>{{ selectedBooking.checkedInAt }}</span>
-            </div>
+<!--            &lt;!&ndash; Check-in &ndash;&gt;-->
+<!--            <div class="detail-row" *ngIf="selectedBooking.checkedInAt">-->
+<!--                <strong><i class="bi bi-box-arrow-in-right"></i> Check-in:</strong>-->
+<!--                <span>{{ selectedBooking.checkedInAt }}</span>-->
+<!--            </div>-->
 
-            <!-- Check-out -->
-            <div class="detail-row" *ngIf="selectedBooking.checkedOutAt">
-                <strong><i class="bi bi-box-arrow-left"></i> Check-out:</strong>
-                <span>{{ selectedBooking.checkedOutAt }}</span>
-            </div>
+<!--            &lt;!&ndash; Check-out &ndash;&gt;-->
+<!--            <div class="detail-row" *ngIf="selectedBooking.checkedOutAt">-->
+<!--                <strong><i class="bi bi-box-arrow-left"></i> Check-out:</strong>-->
+<!--                <span>{{ selectedBooking.checkedOutAt }}</span>-->
+<!--            </div>-->
         </div>
     </div>
     <div class="modal-footer">
         <!-- Azioni -->
-        <button
-                *ngIf="selectedBooking && canCheckIn(selectedBooking)"
-                class="btn btn-success"
-                (click)="checkIn(selectedBooking)"
-        >
-            <i class="bi bi-box-arrow-in-right"></i>
-            Check-in
-        </button>
+<!--        <button-->
+<!--                *ngIf="selectedBooking && canCheckIn(selectedBooking)"-->
+<!--                class="btn btn-success"-->
+<!--                (click)="checkIn(selectedBooking)"-->
+<!--        >-->
+<!--            <i class="bi bi-box-arrow-in-right"></i>-->
+<!--            Check-in-->
+<!--        </button>-->
 
         <button
                 *ngIf="selectedBooking && canCheckOut(selectedBooking)"

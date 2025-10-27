@@ -102,3 +102,30 @@
         </div>
     </footer>
 </div>
+
+
+<ng-template #confirmLogoutModal let-modal>
+    <div class="modal-header bg-primary">
+        <h5 class="modal-title text-white">
+            <i class="bi bi-exclamation-triangle"></i>
+            Conferma Logout
+        </h5>
+        <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="modal.dismiss()"></button>
+    </div>
+    <div class="modal-body">
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-circle"></i>
+            Sei sicuro di voler effettuare il logout?
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">
+            <i class="bi bi-x-circle"></i>
+            Annulla
+        </button>
+        <button type="button" class="btn btn-danger" (click)="confirmLogout()">
+            <i class="bi bi-box-arrow-right"></i>
+            Logout
+        </button>
+    </div>
+</ng-template>

@@ -84,6 +84,10 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
     lastTouchDistance = 0;
     lastTouchCenter = {x: 0, y: 0};
 
+    // Mouse position for zoom
+    private lastMouseX = 0;
+    private lastMouseY = 0;
+
     private floorLayouts: { [key: number]: { [deskNumber: string]: { x: number; y: number } } } = {
         1: this.generateFloor1Layout(),
         3: this.generateFloor3Layout()
@@ -108,6 +112,14 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
         // Se proviene da booking-list, attiva il filtro di default
         if (this.fromBookingList && this.bookingId) {
             this.showMyBookingOnly = true;
+        }
+
+        // Aggiungi listener per tracciare la posizione del mouse
+        if (typeof window !== 'undefined') {
+            window.addEventListener('mousemove', (e) => {
+                this.lastMouseX = e.clientX;
+                this.lastMouseY = e.clientY;
+            });
         }
     }
 
@@ -493,15 +505,46 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
 
     // Zoom Methods
     zoomIn(): void {
-        if (this.zoomLevel < this.maxZoom) {
-            this.zoomLevel = Math.min(this.zoomLevel + 0.2, this.maxZoom);
-        }
+        this.zoomToPoint(0.2);
     }
 
     zoomOut(): void {
-        if (this.zoomLevel > this.minZoom) {
-            this.zoomLevel = Math.max(this.zoomLevel - 0.2, this.minZoom);
+        this.zoomToPoint(-0.2);
+    }
+
+    private zoomToPoint(delta: number): void {
+        const oldZoom = this.zoomLevel;
+        const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, oldZoom + delta));
+
+        if (newZoom === oldZoom) return;
+
+        // Ottieni il contenitore SVG per calcolare le coordinate relative
+        if (!this.svgElement?.nativeElement) {
+            this.zoomLevel = newZoom;
+            return;
         }
+
+        const svg = this.svgElement.nativeElement;
+        const rect = svg.getBoundingClientRect();
+
+        // Usa la posizione del mouse se disponibile, altrimenti usa il centro
+        const clientX = this.lastMouseX || rect.left + rect.width / 2;
+        const clientY = this.lastMouseY || rect.top + rect.height / 2;
+
+        // Calcola il punto relativo al contenitore
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+
+        // Calcola il punto nello spazio pre-zoom
+        const pointX = (x - this.panX) / oldZoom;
+        const pointY = (y - this.panY) / oldZoom;
+
+        // Aggiorna lo zoom
+        this.zoomLevel = newZoom;
+
+        // Calcola il nuovo pan per mantenere il punto sotto il cursore
+        this.panX = x - pointX * newZoom;
+        this.panY = y - pointY * newZoom;
     }
 
     resetZoom(): void {
@@ -522,12 +565,32 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
     // Wheel Zoom
     onWheel(event: WheelEvent): void {
         event.preventDefault();
-        const delta = event.deltaY > 0 ? -0.1 : 0.1;
-        const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoomLevel + delta));
 
-        if (newZoom !== this.zoomLevel) {
-            this.zoomLevel = newZoom;
-        }
+        if (!this.svgElement?.nativeElement) return;
+
+        const svg = this.svgElement.nativeElement;
+        const rect = svg.getBoundingClientRect();
+
+        // Calcola il punto del mouse relativo all'SVG
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        const oldZoom = this.zoomLevel;
+        const delta = event.deltaY > 0 ? -0.1 : 0.1;
+        const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, oldZoom + delta));
+
+        if (newZoom === oldZoom) return;
+
+        // Calcola il punto nello spazio pre-zoom
+        const pointX = (x - this.panX) / oldZoom;
+        const pointY = (y - this.panY) / oldZoom;
+
+        // Aggiorna lo zoom
+        this.zoomLevel = newZoom;
+
+        // Calcola il nuovo pan per mantenere il punto sotto il cursore
+        this.panX = x - pointX * newZoom;
+        this.panY = y - pointY * newZoom;
     }
 
     // Touch Events
