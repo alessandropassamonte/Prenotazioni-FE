@@ -12,6 +12,7 @@ import { FloorService } from '../../services/floor.service';
 })
 export class FloorSelectorComponent implements OnInit {
   @Input() selectedDate?: Date;
+  @Input() preselectedFloorId?: number;
   @Output() floorSelected = new EventEmitter<Floor>();
   
   floors: Floor[] = [];
@@ -31,8 +32,15 @@ export class FloorSelectorComponent implements OnInit {
         this.floors = floors.sort((a, b) => a.floorNumber - b.floorNumber);
         this.loading = false;
         
-        // Seleziona automaticamente il primo piano
-        if (this.floors.length > 0) {
+        // Seleziona il piano preselezionato se presente, altrimenti il primo
+        if (this.preselectedFloorId) {
+          const preselectedFloor = this.floors.find(f => f.id === this.preselectedFloorId);
+          if (preselectedFloor) {
+            this.selectFloor(preselectedFloor);
+          } else if (this.floors.length > 0) {
+            this.selectFloor(this.floors[0]);
+          }
+        } else if (this.floors.length > 0) {
           this.selectFloor(this.floors[0]);
         }
       },

@@ -28,6 +28,7 @@ interface DeskPosition {
 export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
     @Input() floor?: Floor;
     @Input() selectedDate?: Date;
+    @Input() bookingId?: number;
 
     @ViewChild('confirmModal') confirmModal?: TemplateRef<any>;
     @ViewChild('modifyModal') modifyModal?: TemplateRef<any>;
@@ -353,15 +354,18 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
     // Search Filter Method
     matchesSearchFilter(deskPosition: DeskPosition): boolean {
         if (!this.searchFilter || this.searchFilter.trim() === '') {
-            return true; // Mostra tutte le postazioni se non c'è filtro
+            return true;
         }
 
         const searchTerm = this.searchFilter.trim().toLowerCase();
+
+
         const notes = deskPosition.desk.notes?.toLowerCase() || '';
 
-        return notes.includes(searchTerm);
-    }
+        const userName = deskPosition.booking?.userName?.toLowerCase() || '';
 
+        return notes.includes(searchTerm) || userName.includes(searchTerm);
+    }
     clearSearch(): void {
         this.searchFilter = '';
     }

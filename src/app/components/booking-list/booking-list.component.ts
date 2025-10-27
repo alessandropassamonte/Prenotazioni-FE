@@ -289,25 +289,42 @@ export class BookingListComponent implements OnInit {
     }
 
     onDayClick(day: CalendarDay): void {
-        // Se ci sono prenotazioni, mostra il modale con i dettagli
-        if (day.bookings.length > 0) {
-            this.selectedBooking = day.bookings[0]; // Prende la prima prenotazione
-            this.openBookingDetailsModal();
+        // Se ci sono prenotazioni e l'utente è USER, naviga alla pagina di modifica
+        if (this.isUser() && day.bookings.length > 0) {
+            const booking = day.bookings[0];
+            this.navigateToBookingPageWithBooking(day.date, booking);
             return;
         }
 
-        // Se è un giorno lavorativo futuro e l'utente è USER, apri la mappa
+        // Se è un giorno lavorativo futuro e l'utente è USER, apri la mappa per nuova prenotazione
         if (this.isUser() && day.isWorkingDay && !day.isPast) {
             this.navigateToBookingPage(day.date);
+            return;
+        }
+
+        // Se ci sono prenotazioni e l'utente è ADMIN/MANAGER, mostra il modale con i dettagli
+        if (this.isAdminOrManager() && day.bookings.length > 0) {
+            this.selectedBooking = day.bookings[0];
+            this.openBookingDetailsModal();
         }
     }
 
     navigateToBookingPage(date: Date): void {
         // Naviga alla pagina di prenotazione con la data preselezionata
-        // La logica di preselezionare la data andrà gestita nella booking-page
         this.router.navigate(['/booking'], {
             queryParams: {
                 date: this.formatDate(date)
+            }
+        });
+    }
+
+    navigateToBookingPageWithBooking(date: Date, booking: Booking): void {
+        // Naviga alla pagina di prenotazione con la data e la prenotazione esistente
+        this.router.navigate(['/booking'], {
+            queryParams: {
+                date: this.formatDate(date),
+                bookingId: booking.id,
+                floorId: booking.floorId
             }
         });
     }

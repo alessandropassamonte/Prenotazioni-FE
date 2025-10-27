@@ -182,7 +182,12 @@
                 </div>
             </div>
 
-            <!-- Icona per giorni lavorativi disponibili (solo USER) -->
+            <!-- Icona per giorni con prenotazioni cliccabili (solo USER) -->
+            <div class="working-day-icon" *ngIf="isUser() && day.isWorkingDay && !day.isPast && day.bookings.length > 0">
+                <i class="bi bi-pencil-fill"></i>
+            </div>
+
+            <!-- Icona per giorni lavorativi disponibili senza prenotazioni (solo USER) -->
             <div class="working-day-icon" *ngIf="isUser() && day.isWorkingDay && !day.isPast && day.bookings.length === 0">
                 <i class="bi bi-plus-circle"></i>
             </div>

@@ -19,6 +19,7 @@
         <div class="row mb-4" *ngIf="selectedDate">
             <div class="col-12">
                 <app-floor-selector
+                        [preselectedFloorId]="preselectedFloorId"
                         (floorSelected)="onFloorSelected($event)"
                 ></app-floor-selector>
             </div>
@@ -30,6 +31,7 @@
                 <app-floor-map
                         [selectedDate]="selectedDate"
                         [floor]="selectedFloor"
+                        [bookingId]="preselectedBookingId"
                 ></app-floor-map>
             </div>
         </div>

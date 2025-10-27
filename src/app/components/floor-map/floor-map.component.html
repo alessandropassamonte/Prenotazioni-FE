@@ -31,7 +31,7 @@
                     <input
                         type="text"
                         class="form-control"
-                        placeholder="Cerca per dipartimento (es: APP, IT, SALES...)"
+                        placeholder="Cerca per dipartimento o nome utente (es: APP, IT, Mario Rossi...)"
                         [(ngModel)]="searchFilter"
                         (ngModelChange)="onSearchChange()"
                     >
@@ -46,7 +46,7 @@
                 </div>
                 <small class="text-muted" *ngIf="searchFilter">
                     <i class="bi bi-info-circle"></i>
-                    Risultati filtrati per: <strong>{{ searchFilter }}</strong>
+                    Filtrando per: <strong>{{ searchFilter }}</strong> (Dipartimento o Nome Utente)
                 </small>
             </div>
 

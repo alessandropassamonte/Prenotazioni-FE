@@ -83,6 +83,7 @@ export class DateSelectorComponent implements OnInit, OnChanges {
                 month: this.preselectedDate.getMonth() + 1,
                 day: this.preselectedDate.getDate()
             };
+            // Emetti la data preselezionata
             this.dateSelected.emit(this.preselectedDate);
         }
     }
@@ -101,14 +102,38 @@ export class DateSelectorComponent implements OnInit, OnChanges {
                 this.loadingHolidays = false;
                 console.log('Festività caricate:', this.holidays.length);
                 this.calculateMaxDate();
+                // Dopo aver caricato le festività, emetti la data odierna se è valida
+                this.emitTodayIfValid();
             },
             error: (error) => {
                 console.error('Errore caricamento festività:', error);
                 this.loadingHolidays = false;
                 this.holidays = [];
                 this.calculateMaxDate();
+                // Anche in caso di errore, emetti la data odierna se è valida
+                this.emitTodayIfValid();
             }
         });
+    }
+
+    private emitTodayIfValid(): void {
+        // Se non c'è una data preselezionata, controlla se oggi è valido
+        if (!this.preselectedDate) {
+            const today = new Date();
+            const todayStruct: NgbDateStruct = {
+                year: today.getFullYear(),
+                month: today.getMonth() + 1,
+                day: today.getDate()
+            };
+
+            // Verifica se oggi è un giorno lavorativo (non weekend e non festività)
+            if (!this.isDisabled(todayStruct)) {
+                console.log('Data odierna valida, emetto evento:', today);
+                this.dateSelected.emit(today);
+            } else {
+                console.log('Data odierna non valida (weekend o festività)');
+            }
+        }
     }
 
     private calculateMaxDate(): void {
@@ -144,16 +169,7 @@ export class DateSelectorComponent implements OnInit, OnChanges {
 
     isDisabled = (date: NgbDateStruct): boolean => {
         const jsDate = new Date(date.year, date.month - 1, date.day);
-
-        if (this.isWeekend(jsDate)) {
-            return true;
-        }
-
-        if (this.isHoliday(jsDate)) {
-            return true;
-        }
-
-        return false;
+        return this.isWeekend(jsDate) || this.isHoliday(jsDate);
     };
 
     private isWeekend(date: Date): boolean {
