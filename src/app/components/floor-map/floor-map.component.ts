@@ -29,6 +29,7 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
     @Input() floor?: Floor;
     @Input() selectedDate?: Date;
     @Input() bookingId?: number;
+    @Input() fromBookingList?: boolean;
 
     @ViewChild('confirmModal') confirmModal?: TemplateRef<any>;
     @ViewChild('modifyModal') modifyModal?: TemplateRef<any>;
