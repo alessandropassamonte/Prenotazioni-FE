@@ -34,6 +34,10 @@ export class BookingService {
     return this.http.get<Booking[]>(`${this.apiUrl}/user/${userId}/upcoming`);
   }
 
+    getUserUpcomingListBookings(userId: number): Observable<Booking[]> {
+        return this.http.get<Booking[]>(`${this.apiUrl}/user/${userId}/upcomingList`);
+    }
+
   getBookingsForDate(date: string): Observable<Booking[]> {
     return this.http.get<Booking[]>(`${this.apiUrl}/date/${date}`);
   }

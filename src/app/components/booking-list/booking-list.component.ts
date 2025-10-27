@@ -150,7 +150,7 @@ export class BookingListComponent implements OnInit {
             ? this.allUsers.find(u => u.email === this.filters.userEmail)?.id || this.userId
             : this.userId;
 
-        this.bookingService.getUserUpcomingBookings(targetUserId).subscribe({
+        this.bookingService.getUserUpcomingListBookings(targetUserId).subscribe({
             next: (bookings) => {
                 this.bookings = this.applyStatusFilter(bookings);
                 this.generateCalendar();
@@ -289,23 +289,39 @@ export class BookingListComponent implements OnInit {
     }
 
     onDayClick(day: CalendarDay): void {
-        // Se ci sono prenotazioni e l'utente è USER, naviga alla pagina di modifica
-        if (this.isUser() && day.bookings.length > 0) {
-            const booking = day.bookings[0];
-            this.navigateToBookingPageWithBooking(day.date, booking);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Previeni azione se il giorno è nel passato
+        if (day.isPast) {
             return;
         }
 
-        // Se è un giorno lavorativo futuro e l'utente è USER, apri la mappa per nuova prenotazione
-        if (this.isUser() && day.isWorkingDay && !day.isPast) {
+        // Previeni azione se è weekend o festività
+        if (day.isWeekend || day.isHoliday) {
+            return;
+        }
+
+        // Se ci sono prenotazioni, mostrare sempre le informazioni (sia per USER che ADMIN/MANAGER)
+        if (day.bookings.length > 0) {
+            if (this.isUser()) {
+                const booking = day.bookings[0];
+                this.navigateToBookingPageWithBooking(day.date, booking);
+            } else if (this.isAdminOrManager()) {
+                this.selectedBooking = day.bookings[0];
+                this.openBookingDetailsModal();
+            }
+            return;
+        }
+
+        // Se NON ci sono prenotazioni, verifica il limite prima di permettere nuova prenotazione
+        if (this.maxBookingDate && day.date > this.maxBookingDate) {
+            return;
+        }
+
+        // Se è un giorno lavorativo futuro senza prenotazioni e l'utente è USER, apri la mappa per nuova prenotazione
+        if (this.isUser() && day.isWorkingDay) {
             this.navigateToBookingPage(day.date);
-            return;
-        }
-
-        // Se ci sono prenotazioni e l'utente è ADMIN/MANAGER, mostra il modale con i dettagli
-        if (this.isAdminOrManager() && day.bookings.length > 0) {
-            this.selectedBooking = day.bookings[0];
-            this.openBookingDetailsModal();
         }
     }
 
