@@ -1,13 +1,23 @@
-import { Component, Input, OnChanges, SimpleChanges, ViewChild, TemplateRef, OnInit, ElementRef, AfterViewInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Floor, Desk } from '../../models/floor.model';
-import { Booking, BookingType, CreateBookingRequest } from '../../models/booking.model';
-import { DeskService } from '../../services/desk.service';
-import { BookingService } from '../../services/booking.service';
-import { AuthService } from '../../services/auth.service';
-import { ModalService } from '../../services/modal.service';
-import { NgbTooltipModule, NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
+import {
+    Component,
+    Input,
+    OnChanges,
+    SimpleChanges,
+    ViewChild,
+    TemplateRef,
+    OnInit,
+    ElementRef,
+    AfterViewInit
+} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {Floor, Desk} from '../../models/floor.model';
+import {Booking, BookingType, CreateBookingRequest} from '../../models/booking.model';
+import {DeskService} from '../../services/desk.service';
+import {BookingService} from '../../services/booking.service';
+import {AuthService} from '../../services/auth.service';
+import {ModalService} from '../../services/modal.service';
+import {NgbTooltipModule, NgbModal, NgbModalRef} from '@ng-bootstrap/ng-bootstrap';
 
 interface DeskPosition {
     desk: Desk;
@@ -29,12 +39,15 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
     @Input() floor?: Floor;
     @Input() selectedDate?: Date;
     @Input() bookingId?: number;
-    @Input() fromBookingList?: boolean;
+    @Input() fromBookingList?: number;
+
+    showMyBookingOnly: boolean = false;
+    hasUserBookingForToday: boolean = false;
 
     @ViewChild('confirmModal') confirmModal?: TemplateRef<any>;
     @ViewChild('modifyModal') modifyModal?: TemplateRef<any>;
     @ViewChild('userInfoModal') userInfoModal?: TemplateRef<any>;
-    @ViewChild('floorMapSvg', { static: false }) svgElement?: ElementRef<SVGSVGElement>;
+    @ViewChild('floorMapSvg', {static: false}) svgElement?: ElementRef<SVGSVGElement>;
 
     desks: Desk[] = [];
     deskPositions: DeskPosition[] = [];
@@ -68,7 +81,7 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
 
     // Touch properties
     lastTouchDistance = 0;
-    lastTouchCenter = { x: 0, y: 0 };
+    lastTouchCenter = {x: 0, y: 0};
 
     private floorLayouts: { [key: number]: { [deskNumber: string]: { x: number; y: number } } } = {
         1: this.generateFloor1Layout(),
@@ -81,15 +94,19 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
         private authService: AuthService,
         private modalServiceNgb: NgbModal,
         private modalService: ModalService
-    ) {}
+    ) {
+    }
 
     ngOnInit(): void {
-        const currentUser = this.authService.currentUserValue;
-        if (currentUser) {
-            this.currentUserId = currentUser.id;
-            console.log('UserId ottenuto da AuthService:', this.currentUserId);
-        } else {
-            console.warn('Utente non autenticato, uso userId di fallback');
+        this.authService.currentUser.subscribe(user => {
+            if (user) {
+                this.currentUserId = user.id;
+            }
+        });
+
+        // Se proviene da booking-list, attiva il filtro di default
+        if (this.fromBookingList && this.bookingId) {
+            this.showMyBookingOnly = true;
         }
     }
 
@@ -188,11 +205,17 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
         const layout = this.floorLayouts[this.floor.floorNumber] || {};
         this.deskPositions = [];
 
+        this.hasUserBookingForToday = false;
+
         this.desks.forEach(desk => {
             const position = layout[desk.deskNumber] || this.getDefaultPosition(desk.deskNumber);
             const isAvailable = availableDesks.some(d => d.id === desk.id);
             const booking = bookings.find(b => b.deskId === desk.id);
             const bookedByCurrentUser = booking?.userId === this.currentUserId;
+
+            if (bookedByCurrentUser) {
+                this.hasUserBookingForToday = true;
+            }
 
             this.deskPositions.push({
                 desk,
@@ -205,6 +228,32 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
         });
 
         console.log('DeskPositions created:', this.deskPositions.length);
+    }
+
+    // Aggiungi metodo per verificare se l'utente è di tipo USER
+    isRegularUser(): boolean {
+        const currentUser = this.authService.currentUserValue;
+        return currentUser?.role === 'USER';
+    }
+
+    getFilteredDeskPositions(): DeskPosition[] {
+        if (!this.showMyBookingOnly) {
+            return this.deskPositions.filter(dp => this.matchesSearchFilter(dp));
+        }
+
+        return this.deskPositions.filter(dp =>
+            dp.bookedByCurrentUser && this.matchesSearchFilter(dp)
+        );
+    }
+
+    toggleMyBookingFilter(): void {
+        // Non serve più invertire il valore, [(ngModel)] lo fa automaticamente
+        // Questo metodo può essere usato per eventuali azioni aggiuntive quando il filtro cambia
+        console.log('Filtro "Mostra solo la tua prenotazione":', this.showMyBookingOnly);
+    }
+
+    shouldShowMyBookingSwitch(): boolean {
+        return this.isRegularUser() && this.hasUserBookingForToday;
     }
 
     onDeskClick(deskPosition: DeskPosition): void {
@@ -367,6 +416,7 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
 
         return notes.includes(searchTerm) || userName.includes(searchTerm);
     }
+
     clearSearch(): void {
         this.searchFilter = '';
     }
@@ -522,80 +572,80 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
     private generateFloor1Layout(): { [deskNumber: string]: { x: number; y: number } } {
         const layout: { [deskNumber: string]: { x: number; y: number } } = {};
 
-        layout['1'] = { x: 635.3, y: 101.5 };
-        layout['2'] = { x: 635.3, y: 132.0 };
-        layout['3'] = { x: 658.0, y: 101.5 };
-        layout['4'] = { x: 658.0, y: 132.0 };
-        layout['5'] = { x: 721.1, y: 101.5 };
-        layout['6'] = { x: 721.1, y: 132.0};
-        layout['7'] = { x: 744.5, y: 101.5 };
-        layout['8'] = { x: 744.5, y: 132.0 };
-        layout['9'] = { x: 803.8, y: 101.5 };
-        layout['10'] = { x: 803.8, y: 132.0 };
-        layout['11'] = { x: 827.6, y: 101.5 };
-        layout['12'] = { x: 827.6, y: 132.0 };
-        layout['13'] = { x: 884.0, y: 101.5 };
-        layout['14'] = { x: 884.0, y: 132.0 };
-        layout['15'] = { x: 909.6, y: 101.5 };
-        layout['16'] = { x: 909.6, y: 132.0 };
-        layout['17'] = { x: 948.2, y: 277.6 };
-        layout['18'] = { x: 980.6, y: 277.6 };
-        layout['19'] = { x: 1013.1, y: 277.6 };
-        layout['20'] = { x: 948.2, y: 302.3 };
-        layout['21'] = { x: 980.6, y: 301.4 };
-        layout['22'] = { x: 1013.1, y: 302.3 };
-        layout['23'] = { x: 948.2, y: 366.8 };
-        layout['24'] = { x: 980.6, y: 366.8 };
-        layout['25'] = { x: 1013.1, y: 366.8 };
-        layout['26'] = { x: 948.2, y: 391.4 };
-        layout['27'] = { x: 980.6, y: 391.4 };
-        layout['28'] = { x: 1013.1, y: 391.4 };
-        layout['29'] = { x: 980.6, y: 457.2 };
-        layout['30'] = { x: 1013.1, y: 457.2 };
-        layout['31'] = { x: 980.6, y: 481.9};
-        layout['32'] = { x: 1013.1, y: 481.9 };
-        layout['33'] = { x: 980.6, y: 541.6 };
-        layout['34'] = { x: 1013.1, y: 541.6 };
-        layout['35'] = { x: 980.6, y: 566.5 };
-        layout['36'] = { x: 1013.1, y: 566.5 };
-        layout['37'] = { x: 980.6, y: 631.7 };
-        layout['38'] = { x: 1013.1, y: 631.7  };
-        layout['39'] = { x: 980.6, y: 657.2 };
-        layout['40'] = { x: 1013.1, y: 657.2 };
-        layout['41'] = { x: 885.1, y:740.9 };
-        layout['42'] = { x: 885.1, y: 773.4 };
-        layout['43'] = { x: 846.3, y: 740.9 };
-        layout['44'] = { x: 846.3, y: 773.4 };
-        layout['45'] = { x: 823.8, y: 740.9 };
-        layout['46'] = { x: 825.6, y: 773.4 };
-        layout['47'] = { x: 763.4, y: 740.9 };
-        layout['48'] = { x: 761.6, y: 773.4 };
-        layout['49'] = { x: 743.6, y: 740.9 };
-        layout['50'] = { x: 743.6, y: 773.4};
-        layout['51'] = { x: 678.7, y: 740.9 };
-        layout['52'] = { x: 679.6, y: 773.4 };
-        layout['53'] = { x: 659.8, y: 740.9 };
-        layout['54'] = { x: 659.8, y: 773.4 };
-        layout['55'] = { x: 534.5, y: 657.2 };
-        layout['56'] = { x: 567.0, y: 657.2 };
-        layout['57'] = { x: 534.5, y: 631.5 };
-        layout['58'] = { x: 567.0, y: 631.5 };
-        layout['59'] = { x: 534.5, y: 566.5 };
-        layout['60'] = { x: 567.0, y: 566.5 };
-        layout['61'] = { x: 534.5, y: 541.6 };
-        layout['62'] = { x: 567.0, y: 541.6 };
-        layout['63'] = { x: 534.5, y: 472.5 };
-        layout['64'] = { x: 567.0, y: 472.5 };
-        layout['65'] = { x: 534.5, y: 447.9 };
-        layout['66'] = { x: 567.0, y: 447.9 };
-        layout['67'] = { x: 534.5, y: 384.4 };
-        layout['68'] = { x: 567.0, y: 384.3 };
-        layout['69'] = { x: 534.5, y: 359.5 };
-        layout['70'] = { x: 567.0, y: 359.5 };
-        layout['71'] = { x: 534.5, y: 294.1 };
-        layout['72'] = { x: 567.0, y: 294.1 };
-        layout['73'] = { x: 534.5, y: 270.3 };
-        layout['74'] = { x: 567.0, y: 270.4 };
+        layout['1'] = {x: 635.3, y: 101.5};
+        layout['2'] = {x: 635.3, y: 132.0};
+        layout['3'] = {x: 658.0, y: 101.5};
+        layout['4'] = {x: 658.0, y: 132.0};
+        layout['5'] = {x: 721.1, y: 101.5};
+        layout['6'] = {x: 721.1, y: 132.0};
+        layout['7'] = {x: 744.5, y: 101.5};
+        layout['8'] = {x: 744.5, y: 132.0};
+        layout['9'] = {x: 803.8, y: 101.5};
+        layout['10'] = {x: 803.8, y: 132.0};
+        layout['11'] = {x: 827.6, y: 101.5};
+        layout['12'] = {x: 827.6, y: 132.0};
+        layout['13'] = {x: 884.0, y: 101.5};
+        layout['14'] = {x: 884.0, y: 132.0};
+        layout['15'] = {x: 909.6, y: 101.5};
+        layout['16'] = {x: 909.6, y: 132.0};
+        layout['17'] = {x: 948.2, y: 277.6};
+        layout['18'] = {x: 980.6, y: 277.6};
+        layout['19'] = {x: 1013.1, y: 277.6};
+        layout['20'] = {x: 948.2, y: 302.3};
+        layout['21'] = {x: 980.6, y: 301.4};
+        layout['22'] = {x: 1013.1, y: 302.3};
+        layout['23'] = {x: 948.2, y: 366.8};
+        layout['24'] = {x: 980.6, y: 366.8};
+        layout['25'] = {x: 1013.1, y: 366.8};
+        layout['26'] = {x: 948.2, y: 391.4};
+        layout['27'] = {x: 980.6, y: 391.4};
+        layout['28'] = {x: 1013.1, y: 391.4};
+        layout['29'] = {x: 980.6, y: 457.2};
+        layout['30'] = {x: 1013.1, y: 457.2};
+        layout['31'] = {x: 980.6, y: 481.9};
+        layout['32'] = {x: 1013.1, y: 481.9};
+        layout['33'] = {x: 980.6, y: 541.6};
+        layout['34'] = {x: 1013.1, y: 541.6};
+        layout['35'] = {x: 980.6, y: 566.5};
+        layout['36'] = {x: 1013.1, y: 566.5};
+        layout['37'] = {x: 980.6, y: 631.7};
+        layout['38'] = {x: 1013.1, y: 631.7};
+        layout['39'] = {x: 980.6, y: 657.2};
+        layout['40'] = {x: 1013.1, y: 657.2};
+        layout['41'] = {x: 885.1, y: 740.9};
+        layout['42'] = {x: 885.1, y: 773.4};
+        layout['43'] = {x: 846.3, y: 740.9};
+        layout['44'] = {x: 846.3, y: 773.4};
+        layout['45'] = {x: 823.8, y: 740.9};
+        layout['46'] = {x: 825.6, y: 773.4};
+        layout['47'] = {x: 763.4, y: 740.9};
+        layout['48'] = {x: 761.6, y: 773.4};
+        layout['49'] = {x: 743.6, y: 740.9};
+        layout['50'] = {x: 743.6, y: 773.4};
+        layout['51'] = {x: 678.7, y: 740.9};
+        layout['52'] = {x: 679.6, y: 773.4};
+        layout['53'] = {x: 659.8, y: 740.9};
+        layout['54'] = {x: 659.8, y: 773.4};
+        layout['55'] = {x: 534.5, y: 657.2};
+        layout['56'] = {x: 567.0, y: 657.2};
+        layout['57'] = {x: 534.5, y: 631.5};
+        layout['58'] = {x: 567.0, y: 631.5};
+        layout['59'] = {x: 534.5, y: 566.5};
+        layout['60'] = {x: 567.0, y: 566.5};
+        layout['61'] = {x: 534.5, y: 541.6};
+        layout['62'] = {x: 567.0, y: 541.6};
+        layout['63'] = {x: 534.5, y: 472.5};
+        layout['64'] = {x: 567.0, y: 472.5};
+        layout['65'] = {x: 534.5, y: 447.9};
+        layout['66'] = {x: 567.0, y: 447.9};
+        layout['67'] = {x: 534.5, y: 384.4};
+        layout['68'] = {x: 567.0, y: 384.3};
+        layout['69'] = {x: 534.5, y: 359.5};
+        layout['70'] = {x: 567.0, y: 359.5};
+        layout['71'] = {x: 534.5, y: 294.1};
+        layout['72'] = {x: 567.0, y: 294.1};
+        layout['73'] = {x: 534.5, y: 270.3};
+        layout['74'] = {x: 567.0, y: 270.4};
 
         return layout;
     }
@@ -607,86 +657,86 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
     private generateFloor3Layout(): { [deskNumber: string]: { x: number; y: number } } {
         const layout: { [deskNumber: string]: { x: number; y: number } } = {};
 
-        layout['1'] = { x: 541.4, y: 92.1 };
-        layout['2'] = { x: 541.4, y: 126.6 };
-        layout['3'] = { x: 567.7, y: 92.1 };
-        layout['4'] = { x: 567.4, y: 126.6 };
-        layout['5'] = { x: 621.5, y: 92.1 };
-        layout['6'] = { x: 621.5, y: 126.6 };
-        layout['7'] = { x: 648.1, y: 92.1 };
-        layout['8'] = { x: 646.3, y: 126.6 };
-        layout['9'] = { x: 706.7, y: 92.1 };
-        layout['10'] = { x: 706.7, y: 126.6 };
-        layout['11'] = { x: 731.3, y: 92.1 };
-        layout['12'] = { x: 731.3, y: 126.6 };
-        layout['13'] = { x: 788.3, y: 92.1 };
-        layout['14'] = { x: 788.3, y: 126.6 };
-        layout['15'] = { x: 813.9, y: 92.1 };
-        layout['16'] = { x: 812.1, y: 126.6 };
-        layout['17'] = { x: 850.9, y: 267.5 };
-        layout['18'] = { x: 884.2, y: 267.5 };
-        layout['19'] = { x: 915.7, y: 267.5 };
-        layout['20'] = { x: 850.9, y: 293.2 };
-        layout['21'] = { x: 884.2, y: 293.2 };
-        layout['22'] = { x: 915.7, y: 293.2 };
-        layout['23'] = { x: 850.9, y: 357.6 };
-        layout['24'] = { x: 884.2, y: 357.6 };
-        layout['25'] = { x: 915.7, y: 357.6 };
-        layout['26'] = { x: 850.9, y: 381.5 };
-        layout['27'] = { x: 884.2, y: 381.5 };
-        layout['28'] = { x: 915.7, y: 381.5 };
-        layout['29'] = { x: 850.9, y: 442.2 };
-        layout['30'] = { x: 884.2, y: 442.2 };
-        layout['31'] = { x: 915.7, y: 442.2 };
-        layout['32'] = { x: 850.9, y: 472.0 };
-        layout['33'] = { x: 884.2, y: 472.0 };
-        layout['34'] = { x: 915.7, y: 472.0 };
-        layout['35'] = { x: 876.9, y: 530.8 };
-        layout['36'] = { x: 910.3, y: 530.8 };
-        layout['37'] = { x: 876.9, y: 556.5 };
-        layout['38'] = { x: 910.3, y: 556.5 };
-        layout['39'] = { x: 876.9, y: 620.2 };
-        layout['40'] = { x: 910.3, y: 620.2 };
-        layout['41'] = { x: 876.9, y: 644.6 };
-        layout['42'] = { x: 910.3, y: 644.6 };
-        layout['43'] = { x: 897.7, y: 696.8 };
-        layout['44'] = { x: 896.8, y: 728.3 };
-        layout['45'] = { x: 895.9, y: 761.7 };
-        layout['46'] = { x: 870.9, y: 696.8 };
-        layout['47'] = { x: 870.9, y: 728.3 };
-        layout['48'] = { x: 870.9, y: 761.7 };
-        layout['49'] = { x: 807.6, y: 722.9 };
-        layout['50'] = { x: 807.6, y: 755.4 };
-        layout['51'] = { x: 781.3, y: 722.9 };
-        layout['52'] = { x: 781.3, y: 755.4 };
-        layout['53'] = { x: 554.6, y: 722.9 };
-        layout['54'] = { x: 554.6, y: 755.4 };
-        layout['55'] = { x: 528.7, y: 722.9 };
-        layout['56'] = { x: 528.7, y: 755.4 };
-        layout['57'] = { x: 468.9, y: 695.9 };
-        layout['58'] = { x: 468.9, y: 730.1 };
-        layout['59'] = { x: 468.9, y: 760.8 };
-        layout['60'] = { x: 442.3, y: 695.9 };
-        layout['61'] = { x: 442.3, y: 730.1 };
-        layout['62'] = { x: 442.3, y: 760.8 };
-        layout['63'] = { x: 438.1, y: 644.6 };
-        layout['64'] = { x: 472.3, y: 644.6 };
-        layout['65'] = { x: 438.1, y: 620.2 };
-        layout['66'] = { x: 472.3, y: 620.2 };
-        layout['67'] = { x: 438.1, y: 556.5 };
-        layout['68'] = { x: 472.3, y: 556.5 };
-        layout['69'] = { x: 502.1, y: 556.5 };
-        layout['70'] = { x: 438.1, y: 530.8 };
-        layout['71'] = { x: 472.3, y: 530.8 };
-        layout['72'] = { x: 502.1, y: 530.8 };
-        layout['73'] = { x: 438.1, y: 472.0 };
-        layout['74'] = { x: 472.3, y: 472.0 };
-        layout['75'] = { x: 438.1, y: 445.5 };
-        layout['76'] = { x: 472.3, y: 445.5 };
-        layout['77'] = { x: 438.1, y: 377.4 };
-        layout['78'] = { x: 472.3, y: 377.4 };
-        layout['79'] = { x: 438.1, y: 352.7 };
-        layout['80'] = { x: 472.3, y: 352.7 };
+        layout['1'] = {x: 541.4, y: 92.1};
+        layout['2'] = {x: 541.4, y: 126.6};
+        layout['3'] = {x: 567.7, y: 92.1};
+        layout['4'] = {x: 567.4, y: 126.6};
+        layout['5'] = {x: 621.5, y: 92.1};
+        layout['6'] = {x: 621.5, y: 126.6};
+        layout['7'] = {x: 648.1, y: 92.1};
+        layout['8'] = {x: 646.3, y: 126.6};
+        layout['9'] = {x: 706.7, y: 92.1};
+        layout['10'] = {x: 706.7, y: 126.6};
+        layout['11'] = {x: 731.3, y: 92.1};
+        layout['12'] = {x: 731.3, y: 126.6};
+        layout['13'] = {x: 788.3, y: 92.1};
+        layout['14'] = {x: 788.3, y: 126.6};
+        layout['15'] = {x: 813.9, y: 92.1};
+        layout['16'] = {x: 812.1, y: 126.6};
+        layout['17'] = {x: 850.9, y: 267.5};
+        layout['18'] = {x: 884.2, y: 267.5};
+        layout['19'] = {x: 915.7, y: 267.5};
+        layout['20'] = {x: 850.9, y: 293.2};
+        layout['21'] = {x: 884.2, y: 293.2};
+        layout['22'] = {x: 915.7, y: 293.2};
+        layout['23'] = {x: 850.9, y: 357.6};
+        layout['24'] = {x: 884.2, y: 357.6};
+        layout['25'] = {x: 915.7, y: 357.6};
+        layout['26'] = {x: 850.9, y: 381.5};
+        layout['27'] = {x: 884.2, y: 381.5};
+        layout['28'] = {x: 915.7, y: 381.5};
+        layout['29'] = {x: 850.9, y: 442.2};
+        layout['30'] = {x: 884.2, y: 442.2};
+        layout['31'] = {x: 915.7, y: 442.2};
+        layout['32'] = {x: 850.9, y: 472.0};
+        layout['33'] = {x: 884.2, y: 472.0};
+        layout['34'] = {x: 915.7, y: 472.0};
+        layout['35'] = {x: 876.9, y: 530.8};
+        layout['36'] = {x: 910.3, y: 530.8};
+        layout['37'] = {x: 876.9, y: 556.5};
+        layout['38'] = {x: 910.3, y: 556.5};
+        layout['39'] = {x: 876.9, y: 620.2};
+        layout['40'] = {x: 910.3, y: 620.2};
+        layout['41'] = {x: 876.9, y: 644.6};
+        layout['42'] = {x: 910.3, y: 644.6};
+        layout['43'] = {x: 897.7, y: 696.8};
+        layout['44'] = {x: 896.8, y: 728.3};
+        layout['45'] = {x: 895.9, y: 761.7};
+        layout['46'] = {x: 870.9, y: 696.8};
+        layout['47'] = {x: 870.9, y: 728.3};
+        layout['48'] = {x: 870.9, y: 761.7};
+        layout['49'] = {x: 807.6, y: 722.9};
+        layout['50'] = {x: 807.6, y: 755.4};
+        layout['51'] = {x: 781.3, y: 722.9};
+        layout['52'] = {x: 781.3, y: 755.4};
+        layout['53'] = {x: 554.6, y: 722.9};
+        layout['54'] = {x: 554.6, y: 755.4};
+        layout['55'] = {x: 528.7, y: 722.9};
+        layout['56'] = {x: 528.7, y: 755.4};
+        layout['57'] = {x: 468.9, y: 695.9};
+        layout['58'] = {x: 468.9, y: 730.1};
+        layout['59'] = {x: 468.9, y: 760.8};
+        layout['60'] = {x: 442.3, y: 695.9};
+        layout['61'] = {x: 442.3, y: 730.1};
+        layout['62'] = {x: 442.3, y: 760.8};
+        layout['63'] = {x: 438.1, y: 644.6};
+        layout['64'] = {x: 472.3, y: 644.6};
+        layout['65'] = {x: 438.1, y: 620.2};
+        layout['66'] = {x: 472.3, y: 620.2};
+        layout['67'] = {x: 438.1, y: 556.5};
+        layout['68'] = {x: 472.3, y: 556.5};
+        layout['69'] = {x: 502.1, y: 556.5};
+        layout['70'] = {x: 438.1, y: 530.8};
+        layout['71'] = {x: 472.3, y: 530.8};
+        layout['72'] = {x: 502.1, y: 530.8};
+        layout['73'] = {x: 438.1, y: 472.0};
+        layout['74'] = {x: 472.3, y: 472.0};
+        layout['75'] = {x: 438.1, y: 445.5};
+        layout['76'] = {x: 472.3, y: 445.5};
+        layout['77'] = {x: 438.1, y: 377.4};
+        layout['78'] = {x: 472.3, y: 377.4};
+        layout['79'] = {x: 438.1, y: 352.7};
+        layout['80'] = {x: 472.3, y: 352.7};
 
         return layout;
 
