@@ -48,6 +48,7 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
     @ViewChild('modifyModal') modifyModal?: TemplateRef<any>;
     @ViewChild('userInfoModal') userInfoModal?: TemplateRef<any>;
     @ViewChild('floorMapSvg', {static: false}) svgElement?: ElementRef<SVGSVGElement>;
+    @ViewChild('cancelConfirmModal') cancelConfirmModal: any;
 
     desks: Desk[] = [];
     deskPositions: DeskPosition[] = [];
@@ -197,6 +198,69 @@ export class FloorMapComponent implements OnInit, OnChanges, AfterViewInit {
                 this.loading = false;
             }
         });
+    }
+
+    canCancelBooking(): boolean {
+        if (!this.selectedBooking) {
+            return false;
+        }
+
+        // Può cancellare solo prenotazioni attive
+        if (this.selectedBooking.status !== 'ACTIVE') {
+            return false;
+        }
+
+        // Verifica che la data della prenotazione sia oggi o futura
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const bookingDate = new Date(this.selectedBooking.bookingDate);
+        bookingDate.setHours(0, 0, 0, 0);
+
+        return bookingDate >= today;
+    }
+
+    confirmCancelUserBooking(): void {
+        // Chiudi il modale delle informazioni
+        this.modalRef?.close();
+
+        // Apri il modale di conferma
+        setTimeout(() => {
+            this.modalRef = this.modalServiceNgb.open(this.cancelConfirmModal, {
+                centered: true
+            });
+        }, 300);
+    }
+
+// Esegue la cancellazione della prenotazione
+    executeUserBookingCancellation(): void {
+        if (!this.selectedBooking) return;
+
+        this.bookingService.cancelBooking(this.selectedBooking.id, {
+            cancellationReason: 'Cancellazione da mappa'
+        }).subscribe({
+            next: () => {
+                console.log('Prenotazione cancellata con successo');
+                this.modalService.showSuccess('Prenotazione cancellata con successo!');
+                this.modalRef?.close();
+                this.selectedBooking = undefined;
+                // Ricarica le postazioni per aggiornare la mappa
+                this.showMyBookingOnly = false
+                this.loadDesks();
+            },
+            error: (error) => {
+                console.error('Errore nella cancellazione:', error);
+                this.showMyBookingOnly = false
+                this.modalService.showError(error?.message || 'Errore durante la cancellazione della prenotazione');
+            }
+        });
+    }
+
+
+    isCurrentUserBooking(): boolean {
+        if (!this.selectedBooking || !this.currentUserId) {
+            return false;
+        }
+        return this.selectedBooking.userId === this.currentUserId;
     }
 
     buildDeskPositions(availableDesks: Desk[], bookings: Booking[]): void {

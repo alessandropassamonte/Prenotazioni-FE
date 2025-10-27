@@ -297,6 +297,47 @@
             <i class="bi bi-x-circle"></i>
             Chiudi
         </button>
+        <button
+                *ngIf="isCurrentUserBooking() && canCancelBooking()"
+                type="button"
+                class="btn btn-danger"
+                (click)="confirmCancelUserBooking()">
+            <i class="bi bi-trash"></i>
+            Cancella Prenotazione
+        </button>
 
+    </div>
+</ng-template>
+
+<!-- Modal di conferma cancellazione -->
+<ng-template #cancelConfirmModal let-modal>
+    <div class="modal-header bg-danger">
+        <h5 class="modal-title text-white">
+            <i class="bi bi-exclamation-triangle"></i>
+            Conferma Cancellazione
+        </h5>
+        <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="modal.dismiss()"></button>
+    </div>
+    <div class="modal-body">
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-circle"></i>
+            Sei sicuro di voler cancellare questa prenotazione?
+        </div>
+        <p><strong>Dettagli prenotazione:</strong></p>
+        <div class="desk-info">
+            <p class="mb-1"><strong>Postazione:</strong> {{ selectedBooking?.deskNumber }}</p>
+            <p class="mb-1"><strong>Piano:</strong> {{ selectedBooking?.floorName }}</p>
+            <p class="mb-0"><strong>Data:</strong> {{ selectedBooking?.bookingDate | date: 'dd/MM/yyyy' }}</p>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">
+            <i class="bi bi-x-circle"></i>
+            Annulla
+        </button>
+        <button type="button" class="btn btn-danger" (click)="executeUserBookingCancellation()">
+            <i class="bi bi-trash"></i>
+            Conferma Cancellazione
+        </button>
     </div>
 </ng-template>
