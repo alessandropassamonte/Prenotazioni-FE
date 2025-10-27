@@ -18,6 +18,10 @@
     }
   }
 
+  .circle-fill{
+    margin-top: 20px;
+  }
+
   // Filtri
   .filters-section {
     .filters-panel {
@@ -67,6 +71,11 @@
       }
     }
   }
+
+  .month-name {
+      text-transform: capitalize !important;
+  }
+
 
   // Controlli Calendario
   .calendar-controls {
@@ -134,7 +143,7 @@
         }
 
         &.weekend {
-          background-color: #f8f9fa;
+          background-color: rgba(252, 1, 1, 0.8);
           border-color: #6c757d;
         }
       }
@@ -227,10 +236,10 @@
       }
 
       &.weekend {
-        background-color: #f8f9fa;
+        background-color: rgba(252, 1, 1, 0.8);
 
         .day-number {
-          color: #6c757d;
+          color: #ffffff;
         }
       }
 

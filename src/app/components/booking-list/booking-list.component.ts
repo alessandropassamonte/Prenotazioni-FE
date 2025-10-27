@@ -16,6 +16,7 @@ interface CalendarDay {
     isToday: boolean;
     isWeekend: boolean;
     isHoliday: boolean;
+    holidayName?: string;
     bookings: Booking[];
     isWorkingDay: boolean; // Giorno lavorativo futuro
     isPast: boolean;
@@ -260,12 +261,19 @@ export class BookingListComponent implements OnInit {
                 isToday: date.getTime() === today.getTime(),
                 isWeekend: this.isWeekend(date),
                 isHoliday: this.isHoliday(date),
+                holidayName: this.getHolidayName(date),
                 bookings: dayBookings,
                 isWorkingDay: isWorkingDay,
                 isPast: date < today
             });
         }
     }
+
+        getHolidayName(date: Date): string | undefined {
+            const dateString = this.formatDate(date);
+            const h = this.holidays.find((h: CompanyHoliday) => h.date === dateString);
+            return h?.name;
+        }
 
     isWeekend(date: Date): boolean {
         const day = date.getDay();
@@ -288,29 +296,38 @@ export class BookingListComponent implements OnInit {
         return !this.isWeekend(date) && !this.isHoliday(date);
     }
 
+
     onDayClick(day: CalendarDay): void {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        // Previeni azione se il giorno è nel passato
-        if (day.isPast) {
-            return;
-        }
-
-        // Previeni azione se è weekend o festività
-        if (day.isWeekend || day.isHoliday) {
-            return;
-        }
-
         // Se ci sono prenotazioni, mostrare sempre le informazioni (sia per USER che ADMIN/MANAGER)
+        // Questo deve essere verificato PRIMA del controllo isPast per permettere la visualizzazione
+        // dei dettagli delle prenotazioni passate
+
+        // Da qui in poi gestiamo solo i casi senza prenotazioni
+        // Previeni azione se il giorno è nel passato
+        if (day.bookings.length > 0 && day.isPast) {
+            this.selectedBooking = day.bookings[0];
+            this.openBookingDetailsModal();
+        }
+
+
         if (day.bookings.length > 0) {
-            if (this.isUser()) {
+            if (this.isUser() && !day.isPast) {
                 const booking = day.bookings[0];
                 this.navigateToBookingPageWithBooking(day.date, booking);
             } else if (this.isAdminOrManager()) {
                 this.selectedBooking = day.bookings[0];
                 this.openBookingDetailsModal();
             }
+            return;
+        }
+
+
+
+        // Previeni azione se è weekend o festività
+        if (day.isWeekend || day.isHoliday) {
             return;
         }
 
@@ -464,7 +481,12 @@ export class BookingListComponent implements OnInit {
     }
 
     canCancel(booking: Booking): boolean {
-        return booking.status === BookingStatus.ACTIVE;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const bookingDate = new Date(booking.bookingDate);
+        bookingDate.setHours(0, 0, 0, 0);
+
+        return booking.status === BookingStatus.ACTIVE && bookingDate >= today;
     }
 
     getStatusBadgeClass(status: BookingStatus): string {

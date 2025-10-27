@@ -1,19 +1,22 @@
-<div class="floor-map-container">
+<div class="floor-map-container container">
     <div class="card shadow-sm">
         <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-3 map-header">
+            <div class="d-flex justify-content-center align-items-center mb-2 map-header">
                 <h5 class="card-title mb-0">
                     <i class="bi bi-map"></i>
                     {{ floor?.name }} - Mappa Postazioni
                 </h5>
+
+            </div>
+            <div class="d-flex justify-content-center align-items-center mb-3 map-header">
                 <div class="legend">
                     <div class="legend-item">
                         <div class="legend-color available"></div>
-                        <span>Disponibile ({{availableDesks}})</span>
+                        <span>Disponibile ({{ availableDesks }})</span>
                     </div>
                     <div class="legend-item">
                         <div class="legend-color occupied"></div>
-                        <span>Occupata ({{occupiedDesks }})</span>
+                        <span>Occupata ({{ occupiedDesks }})</span>
                     </div>
                     <div class="legend-item">
                         <div class="legend-color my-booking"></div>
@@ -29,18 +32,18 @@
                         <i class="bi bi-search"></i>
                     </span>
                     <input
-                        type="text"
-                        class="form-control"
-                        placeholder="Cerca per dipartimento o nome utente (es: APP, IT, Mario Rossi...)"
-                        [(ngModel)]="searchFilter"
-                        (ngModelChange)="onSearchChange()"
+                            type="text"
+                            class="form-control"
+                            placeholder="Cerca per dipartimento o nome utente (es: APP, IT, Mario Rossi...)"
+                            [(ngModel)]="searchFilter"
+                            (ngModelChange)="onSearchChange()"
                     >
                     <button
-                        class="btn btn-outline-secondary"
-                        type="button"
-                        (click)="clearSearch()"
-                        [disabled]="!searchFilter"
-                        title="Cancella ricerca">
+                            class="btn btn-outline-secondary"
+                            type="button"
+                            (click)="clearSearch()"
+                            [disabled]="!searchFilter"
+                            title="Cancella ricerca">
                         <i class="bi bi-x-circle"></i>
                     </button>
                 </div>
@@ -69,7 +72,7 @@
                     <button class="zoom-btn" (click)="resetZoom()" [disabled]="zoomLevel === 1" title="Reset Zoom">
                         <i class="bi bi-arrow-clockwise"></i>
                     </button>
-                    <span class="zoom-level">{{(zoomLevel * 100).toFixed(0)}}%</span>
+                    <span class="zoom-level">{{ (zoomLevel * 100).toFixed(0) }}%</span>
                 </div>
 
                 <!-- Contenitore zoomabile -->
@@ -168,7 +171,7 @@
         <p>Vuoi prenotare la postazione <strong>{{ selectedDesk?.deskNumber }}</strong>?</p>
         <div class="desk-info">
             <p class="mb-1"><strong>Piano:</strong> {{ floor?.name }}</p>
-            <p class="mb-1"><strong>Dipartimento:</strong> <strong>{{ selectedDesk?.notes}}</strong></p>
+            <p class="mb-1"><strong>Dipartimento:</strong> <strong>{{ selectedDesk?.notes }}</strong></p>
             <p class="mb-0"><strong>Data:</strong> {{ selectedDate | date: 'dd/MM/yyyy' }}</p>
         </div>
     </div>
@@ -213,7 +216,8 @@
         </div>
         <div class="alert alert-warning mt-3">
             <i class="bi bi-exclamation-circle"></i>
-            <strong>Attenzione:</strong> La prenotazione precedente verrà automaticamente cancellata e sostituita con la nuova.
+            <strong>Attenzione:</strong> La prenotazione precedente verrà automaticamente cancellata e sostituita con la
+            nuova.
         </div>
     </div>
     <div class="modal-footer">

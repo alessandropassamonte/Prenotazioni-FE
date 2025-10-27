@@ -7,117 +7,101 @@
         </h3>
 
         <!-- Filtri -->
-        <div class="filters-section mb-4">
-            <button
-                    class="btn btn-outline-primary btn-sm mb-3"
-                    (click)="showFilters = !showFilters"
-            >
-                <i class="bi bi-funnel"></i>
-                {{ showFilters ? 'Nascondi' : 'Mostra' }} Filtri
-            </button>
+<!--        <div class="filters-section mb-4">-->
+<!--            <button-->
+<!--                    class="btn btn-outline-primary btn-sm mb-3"-->
+<!--                    (click)="showFilters = !showFilters"-->
+<!--            >-->
+<!--                <i class="bi bi-funnel"></i>-->
+<!--                {{ showFilters ? 'Nascondi' : 'Mostra' }} Filtri-->
+<!--            </button>-->
 
-            <div class="filters-panel card" *ngIf="showFilters">
-                <div class="card-body">
-                    <div class="row g-3">
-                        <!-- Filtro Utente (solo ADMIN/MANAGER) -->
-                        <div class="col-md-6" *ngIf="isAdminOrManager()">
-                            <label class="form-label">
-                                <i class="bi bi-person"></i>
-                                Filtra per Utente
-                            </label>
-                            <div class="position-relative">
-                                <input
-                                        type="text"
-                                        class="form-control"
-                                        placeholder="Cerca per nome o email..."
-                                        [(ngModel)]="userSearchTerm"
-                                        (ngModelChange)="filterUsers()"
-                                        (focus)="filterUsers()"
-                                />
-                                <button
-                                        *ngIf="filters.userEmail"
-                                        class="btn btn-sm btn-outline-secondary position-absolute end-0 top-0 mt-1 me-1"
-                                        (click)="clearUserFilter()"
-                                        style="z-index: 10;"
-                                >
-                                    <i class="bi bi-x"></i>
-                                </button>
+<!--            <div class="filters-panel card" *ngIf="showFilters">-->
+<!--                <div class="card-body">-->
+<!--                    <div class="row g-3">-->
+<!--                        &lt;!&ndash; Filtro Utente (solo ADMIN/MANAGER) &ndash;&gt;-->
+<!--                        <div class="col-md-6" *ngIf="isAdminOrManager()">-->
+<!--                            <label class="form-label">-->
+<!--                                <i class="bi bi-person"></i>-->
+<!--                                Filtra per Utente-->
+<!--                            </label>-->
+<!--                            <div class="position-relative">-->
+<!--                                <input-->
+<!--                                        type="text"-->
+<!--                                        class="form-control"-->
+<!--                                        placeholder="Cerca per nome o email..."-->
+<!--                                        [(ngModel)]="userSearchTerm"-->
+<!--                                        (ngModelChange)="filterUsers()"-->
+<!--                                        (focus)="filterUsers()"-->
+<!--                                />-->
+<!--                                <button-->
+<!--                                        *ngIf="filters.userEmail"-->
+<!--                                        class="btn btn-sm btn-outline-secondary position-absolute end-0 top-0 mt-1 me-1"-->
+<!--                                        (click)="clearUserFilter()"-->
+<!--                                        style="z-index: 10;"-->
+<!--                                >-->
+<!--                                    <i class="bi bi-x"></i>-->
+<!--                                </button>-->
 
-                                <!-- Dropdown risultati ricerca -->
-                                <div
-                                        class="user-search-results"
-                                        *ngIf="filteredUsers.length > 0 && userSearchTerm && !filters.userEmail"
-                                >
-                                    <div
-                                            *ngFor="let user of filteredUsers"
-                                            class="user-search-item"
-                                            (click)="selectUser(user)"
-                                    >
-                                        <i class="bi bi-person-circle"></i>
-                                        {{ (user?.firstName || '') + ' ' + (user?.lastName || '') }} <small class="text-muted">({{ user.email }})</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <small class="text-muted" *ngIf="filters.userEmail">
-                                Filtrato per: {{ userSearchTerm }}
-                            </small>
-                        </div>
+<!--                                &lt;!&ndash; Dropdown risultati ricerca &ndash;&gt;-->
+<!--                                <div-->
+<!--                                        class="user-search-results"-->
+<!--                                        *ngIf="filteredUsers.length > 0 && userSearchTerm && !filters.userEmail"-->
+<!--                                >-->
+<!--                                    <div-->
+<!--                                            *ngFor="let user of filteredUsers"-->
+<!--                                            class="user-search-item"-->
+<!--                                            (click)="selectUser(user)"-->
+<!--                                    >-->
+<!--                                        <i class="bi bi-person-circle"></i>-->
+<!--                                        {{ (user?.firstName || '') + ' ' + (user?.lastName || '') }} <small-->
+<!--                                            class="text-muted">({{ user.email }})</small>-->
+<!--                                    </div>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                            <small class="text-muted" *ngIf="filters.userEmail">-->
+<!--                                Filtrato per: {{ userSearchTerm }}-->
+<!--                            </small>-->
+<!--                        </div>-->
 
-                        <!-- Filtro Status -->
-                        <div class="col-md-6">
-                            <label class="form-label">
-                                <i class="bi bi-tag"></i>
-                                Stato
-                            </label>
-                            <select
-                                    class="form-select"
-                                    [(ngModel)]="filters.status"
-                                    (ngModelChange)="applyFilters()"
-                            >
-                                <option [ngValue]="undefined">Tutti gli stati</option>
-                                <option [ngValue]="BookingStatus.ACTIVE">Attiva</option>
-                                <option [ngValue]="BookingStatus.CHECKED_IN">Check-in</option>
-                                <option [ngValue]="BookingStatus.CHECKED_OUT">Check-out</option>
-                                <option [ngValue]="BookingStatus.CANCELLED">Cancellata</option>
-                            </select>
-                        </div>
+<!--                        &lt;!&ndash; Filtro Status &ndash;&gt;-->
+<!--                        <div class="col-md-6">-->
+<!--                            <label class="form-label">-->
+<!--                                <i class="bi bi-tag"></i>-->
+<!--                                Stato-->
+<!--                            </label>-->
+<!--                            <select-->
+<!--                                    class="form-select"-->
+<!--                                    [(ngModel)]="filters.status"-->
+<!--                                    (ngModelChange)="applyFilters()"-->
+<!--                            >-->
+<!--                                <option [ngValue]="undefined">Tutti gli stati</option>-->
+<!--                                <option [ngValue]="BookingStatus.ACTIVE">Attiva</option>-->
+<!--                                <option [ngValue]="BookingStatus.CHECKED_IN">Check-in</option>-->
+<!--                                <option [ngValue]="BookingStatus.CHECKED_OUT">Check-out</option>-->
+<!--                                <option [ngValue]="BookingStatus.CANCELLED">Cancellata</option>-->
+<!--                            </select>-->
+<!--                        </div>-->
 
-                        <!-- Reset -->
-                        <div class="col-12">
-                            <button class="btn btn-sm btn-outline-secondary" (click)="resetFilters()">
-                                <i class="bi bi-x-circle"></i>
-                                Reset Filtri
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+<!--                        &lt;!&ndash; Reset &ndash;&gt;-->
+<!--                        <div class="col-12">-->
+<!--                            <button class="btn btn-sm btn-outline-secondary" (click)="resetFilters()">-->
+<!--                                <i class="bi bi-x-circle"></i>-->
+<!--                                Reset Filtri-->
+<!--                            </button>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
     </div>
 
-    <!-- Controlli Calendario -->
-    <div class="calendar-controls">
-        <button class="btn btn-outline-primary" (click)="previousMonth()">
-            <i class="bi bi-chevron-left"></i>
-        </button>
-
-        <h4 class="month-title">{{ getMonthName() }}</h4>
-
-        <button class="btn btn-outline-primary" (click)="nextMonth()">
-            <i class="bi bi-chevron-right"></i>
-        </button>
-
-        <button class="btn btn-primary ms-3" (click)="goToToday()">
-            <i class="bi bi-calendar-today"></i>
-            Oggi
-        </button>
-    </div>
 
     <!-- Legenda -->
     <div class="calendar-legend">
         <div class="legend-item">
             <span class="legend-box today"></span>
-            <span>Oggi</span>
+            <button class="btn border border-primary" (click)="goToToday()">Oggi</button>
         </div>
         <div class="legend-item">
             <span class="legend-box has-booking"></span>
@@ -129,9 +113,27 @@
         </div>
         <div class="legend-item">
             <span class="legend-box weekend"></span>
-            <span>Weekend/Festivo</span>
+            <span>Weekend/Chiusura</span>
         </div>
     </div>
+
+
+    <div class="row mb-3 ">
+        <div class="col-3 justify-content-start d-flex">
+            <button class="btn btn-outline-primary" (click)="previousMonth()">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+        </div>
+        <div class="col-6 month-name justify-content-center d-flex">
+            <h4 class="month-title">{{ getMonthName() }}</h4>
+        </div>
+        <div class="col-3 justify-content-end d-flex">
+            <button class="btn btn-outline-primary" (click)="nextMonth()">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
 
     <!-- Loading -->
     <div *ngIf="loading" class="text-center py-5">
@@ -146,7 +148,7 @@
         <!-- Intestazione giorni settimana -->
         <div class="calendar-header-row">
             <div *ngFor="let day of weekDays" class="calendar-header-cell">
-                {{ day }}
+                {{day}}
             </div>
         </div>
 
@@ -161,34 +163,39 @@
                 [class.working-day]="isUser() && day.isWorkingDay && !day.isPast"
                 [class.past]="day.isPast"
                 [class.clickable]="day.bookings.length > 0 || (isUser() && day.isWorkingDay && !day.isPast)"
+                [title]="day.holidayName"
                 (click)="onDayClick(day)"
         >
             <div class="day-number">
-                {{ day.date.getDate() }}
+                {{ day.date.getDate() }} <br>
+                <small *ngIf="day.holidayName"> {{ day.holidayName }}</small>
+                <small *ngIf="!day.holidayName && day.isWeekend">W.E.</small>
             </div>
 
             <!-- Indicatore prenotazioni -->
-            <div class="booking-indicators" *ngIf="day.bookings.length > 0">
-                <div
-                        *ngFor="let booking of day.bookings"
-                        class="booking-indicator"
-                        [class.bg-primary]="booking.status === BookingStatus.ACTIVE"
-                        [class.bg-success]="booking.status === BookingStatus.CHECKED_IN"
-                        [class.bg-secondary]="booking.status === BookingStatus.CHECKED_OUT"
-                        [class.bg-danger]="booking.status === BookingStatus.CANCELLED"
-                        [title]="'Postazione ' + booking.deskNumber + ' - ' + getStatusLabel(booking.status)"
-                >
-                    <i class="bi bi-circle-fill"></i>
-                </div>
+            <div class="circle-fill" *ngIf="day.bookings.length > 0">
+                <!--                <div-->
+                <!--                        *ngFor="let booking of day.bookings"-->
+                <!--                        class=""-->
+                <!--                        [class.bg-primary]="booking.status === BookingStatus.ACTIVE"-->
+                <!--                        [class.bg-success]="booking.status === BookingStatus.CHECKED_IN"-->
+                <!--                        [class.bg-secondary]="booking.status === BookingStatus.CHECKED_OUT"-->
+                <!--                        [class.bg-danger]="booking.status === BookingStatus.CANCELLED"-->
+
+                <!--                >-->
+                <i class="bi bi-check-circle-fill"></i>
+                <!--                </div>-->
             </div>
 
             <!-- Icona per giorni con prenotazioni cliccabili (solo USER) -->
-            <div class="working-day-icon" *ngIf="isUser() && day.isWorkingDay && !day.isPast && day.bookings.length > 0">
+            <div class="working-day-icon"
+                 *ngIf="isUser() && day.isWorkingDay && !day.isPast && day.bookings.length > 0">
                 <i class="bi bi-pencil-fill"></i>
             </div>
 
             <!-- Icona per giorni lavorativi disponibili senza prenotazioni (solo USER) -->
-            <div class="working-day-icon" *ngIf="isUser() && day.isWorkingDay && !day.isPast && day.bookings.length === 0">
+            <div class="working-day-icon"
+                 *ngIf="isUser() && day.isWorkingDay && !day.isPast && day.bookings.length === 0">
                 <i class="bi bi-plus-circle"></i>
             </div>
         </div>
@@ -206,7 +213,8 @@
         </div>
         <div class="alert alert-info" *ngIf="isAdminOrManager()">
             <i class="bi bi-info-circle"></i>
-            <strong>Gestione Prenotazioni:</strong> Utilizza il filtro utente per visualizzare le prenotazioni di un utente specifico.
+            <strong>Gestione Prenotazioni:</strong> Utilizza il filtro utente per visualizzare le prenotazioni di un
+            utente specifico.
         </div>
     </div>
 </div>
