@@ -29,10 +29,10 @@
                             Le Mie Prenotazioni
                         </a>
                     </li>
-                    <li *ngIf="authService.isAuthenticated" class="nav-item">
+                    <li *ngIf="authService.isAuthenticated && (currentUser?.role == 'ADMIN' || currentUser?.role == 'MANAGER' )" class="nav-item">
                         <a class="nav-link" routerLink="/admin/holidays" routerLinkActive="active">
-                            <i class="bi bi-calendar-check"></i>
-                            Gestione Chiusure
+                            <i class="bi bi-person-badge"></i>
+                            Amministrazione
                         </a>
                     </li>
 
