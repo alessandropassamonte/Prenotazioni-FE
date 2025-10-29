@@ -7,8 +7,9 @@ import { LoginComponent } from './components/login/login.component';
 import { RegisterComponent } from './components/register/register.component';
 import { AuthGuard } from './guards/auth.guard';
 import { AdminGuard } from './guards/admin.guard';
-import {HolidaysAdminComponent} from "./components/holidays-admin/holidays-admin.component";
-import {OccupancyReportComponent} from "./components/occupancy-report/occupancy-report.component";
+import { HolidaysAdminComponent } from "./components/holidays-admin/holidays-admin.component";
+import { OccupancyReportComponent } from "./components/occupancy-report/occupancy-report.component";
+import {AdminDashboardComponent} from "./pages/admin-dashboard/admin-dashboard.component";
 
 export const routes: Routes = [
     // Route pubbliche (senza autenticazione)
@@ -43,19 +44,26 @@ export const routes: Routes = [
         canActivate: [AuthGuard]
     },
 
-    // Route ADMIN/MANAGER
+    // Route ADMIN/MANAGER - Dashboard Principale
+    {
+        path: 'admin',
+        component: AdminDashboardComponent,
+        title: 'Amministrazione - Desk Booking System',
+        canActivate: [AuthGuard, AdminGuard]
+    },
+
+    // Route ADMIN/MANAGER - Sottosezioni
     {
         path: 'admin/holidays',
         component: HolidaysAdminComponent,
         title: 'Gestione Festività - Desk Booking System',
-        canActivate: [AuthGuard, AdminGuard] // Solo ADMIN e MANAGER
+        canActivate: [AuthGuard, AdminGuard]
     },
-
     {
         path: 'admin/occupancy-report',
         component: OccupancyReportComponent,
-        // Aggiungi guard per ADMIN/MANAGER se necessario
-        canActivate: [AdminGuard]
+        title: 'Report Occupazione - Desk Booking System',
+        canActivate: [AuthGuard, AdminGuard]
     },
 
     // Redirect 404

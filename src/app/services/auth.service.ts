@@ -42,7 +42,7 @@ export interface User {
     providedIn: 'root'
 })
 export class AuthService {
-    private apiUrl = 'http://localhost:8080/api/auth';
+    private apiUrl = 'http://localhost:8181/api/auth';
     private currentUserSubject: BehaviorSubject<User | null>;
     public currentUser: Observable<User | null>;
 

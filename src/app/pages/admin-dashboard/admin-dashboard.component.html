@@ -1,0 +1,106 @@
+<div class="admin-dashboard-container">
+    <div class="container-fluid py-5">
+
+        <!-- Header -->
+        <div class="page-header mb-5">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-4 mb-2">
+                        <i class="bi bi-speedometer2 text-primary"></i>
+                        Pannello Amministrazione
+                    </h1>
+                    <p class="lead text-muted mb-0">
+                        Benvenuto <strong>{{ currentUser?.email }}</strong> - Gestisci il sistema da questa dashboard
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="user-role-badge">
+            <span class="badge bg-primary fs-5 px-4 py-2">
+              <i class="bi bi-shield-check"></i> {{ currentUser?.role }}
+            </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Alert -->
+        <div class="alert alert-info alert-dismissible fade show shadow-sm mb-5" role="alert">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <strong>Dashboard Amministrativa</strong> - Seleziona una delle sezioni sottostanti per accedere alle funzionalità amministrative del sistema.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Admin Cards Grid -->
+        <div class="row g-4">
+            <div class="col-lg-6" *ngFor="let card of adminCards">
+                <div class="admin-card card h-100 shadow-sm border-0"
+                     (click)="navigateTo(card.route)"
+                     [class]="'border-' + card.color">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-start">
+                            <!-- Icon -->
+                            <div class="card-icon-wrapper me-4" [class]="card.bgClass">
+                                <i class="bi fs-1" [class]="card.icon + ' text-' + card.color"></i>
+                            </div>
+
+                            <!-- Content -->
+                            <div class="flex-grow-1">
+                                <h3 class="card-title mb-3">
+                                    {{ card.title }}
+                                    <i class="bi bi-arrow-right-circle float-end" [class]="'text-' + card.color"></i>
+                                </h3>
+                                <p class="card-text text-muted mb-3">
+                                    {{ card.description }}
+                                </p>
+                                <div class="mt-auto">
+                                    <button class="btn btn-sm" [class]="'btn-' + card.color">
+                                        Vai alla sezione
+                                        <i class="bi bi-chevron-right ms-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats Section (Optional) -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm bg-light">
+                    <div class="card-body p-4">
+                        <h5 class="card-title mb-3">
+                            <i class="bi bi-info-square text-primary"></i>
+                            Informazioni Rapide
+                        </h5>
+                        <div class="row text-center">
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                <div class="stat-item">
+                                    <i class="bi bi-calendar-check text-success fs-2 mb-2"></i>
+                                    <h6 class="text-muted mb-0">Sistema Prenotazioni</h6>
+                                    <p class="mb-0"><small>Attivo e funzionante</small></p>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                <div class="stat-item">
+                                    <i class="bi bi-building text-info fs-2 mb-2"></i>
+                                    <h6 class="text-muted mb-0">Piani Gestiti</h6>
+                                    <p class="mb-0"><small>Piano 1 e Piano 3</small></p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="stat-item">
+                                    <i class="bi bi-people text-warning fs-2 mb-2"></i>
+                                    <h6 class="text-muted mb-0">Ruolo Attivo</h6>
+                                    <p class="mb-0"><small>{{ currentUser?.role }}</small></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

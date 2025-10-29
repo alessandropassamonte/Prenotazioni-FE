@@ -30,14 +30,9 @@
                         </a>
                     </li>
                     <li *ngIf="authService.isAuthenticated && (currentUser?.role == 'ADMIN' || currentUser?.role == 'MANAGER' )" class="nav-item">
-                        <a class="nav-link" routerLink="/admin/holidays" routerLinkActive="active">
-                            <i class="bi bi-person-badge"></i>
+                        <a class="nav-link" routerLink="/admin" routerLinkActive="active">
+                            <i class="bi bi-speedometer2"></i>
                             Amministrazione
-                        </a>
-                    </li>
-                    <li class="nav-item" *ngIf="authService.isAuthenticated && (currentUser?.role == 'ADMIN' || currentUser?.role == 'MANAGER' )">
-                        <a class="nav-link" routerLink="/admin/occupancy-report" routerLinkActive="active">
-                            <i class="bi bi-graph-up"></i> Report Occupazione
                         </a>
                     </li>
 
