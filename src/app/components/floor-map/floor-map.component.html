@@ -270,8 +270,7 @@
                 <span class="info-label">Email:</span>
                 <span class="info-value">{{ selectedBooking?.userEmail || 'N/A' }}</span>
             </div>
-            <hr>
-            <h6 class="mb-3"><i class="bi bi-geo-alt"></i> Postazione</h6>
+
             <div class="info-row">
                 <span class="info-label">Postazione:</span>
                 <span class="info-value">{{ selectedBooking?.deskNumber }}</span>
@@ -280,8 +279,6 @@
                 <span class="info-label">Piano:</span>
                 <span class="info-value">{{ selectedBooking?.floorName }}</span>
             </div>
-            <hr>
-            <h6 class="mb-3"><i class="bi bi-calendar3"></i> Prenotazione</h6>
             <div class="info-row">
                 <span class="info-label">Data:</span>
                 <span class="info-value">{{ selectedBooking?.bookingDate | date: 'dd/MM/yyyy' }}</span>

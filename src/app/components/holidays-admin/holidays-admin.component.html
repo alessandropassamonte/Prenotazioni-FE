@@ -1,195 +1,207 @@
 <div class="holidays-admin-container">
-  <div class="container-fluid py-4">
-    <!-- Header -->
-    <div class="page-header mb-4">
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <h2>
-            <i class="bi bi-calendar-x"></i>
-            Gestione Giorni Non Lavorativi
-          </h2>
-          <p class="text-muted">Gestisci festività e chiusure aziendali</p>
-        </div>
-        <button class="btn btn-primary btn-lg" (click)="openCreateModal()">
-          <i class="bi bi-plus-circle"></i>
-          Aggiungi Chiusura
-        </button>
-      </div>
-    </div>
-
-    <!-- Filtro Anno -->
-    <div class="card shadow-sm mb-4">
-      <div class="card-body">
-        <div class="row align-items-center">
-          <div class="col-md-4">
-            <label class="form-label fw-bold">Filtra per Anno:</label>
-            <select class="form-select" [(ngModel)]="filterYear" (ngModelChange)="applyFilter()">
-              <option *ngFor="let year of availableYears" [value]="year">{{ year }}</option>
-            </select>
-          </div>
-          <div class="col-md-8">
-            <div class="alert alert-info mb-0">
-              <i class="bi bi-info-circle"></i>
-              <strong>Totale festività {{ filterYear }}:</strong> {{ filteredHolidays.length }}
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="page-header mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2>
+                        <i class="bi bi-calendar-x"></i>
+                        Gestione Giorni Non Lavorativi
+                    </h2>
+                    <p class="text-muted">Gestisci festività e chiusure aziendali</p>
+                </div>
+                <button class="btn btn-primary btn-lg" (click)="openCreateModal()">
+                    <i class="bi bi-plus-circle"></i>
+                    Aggiungi Chiusura
+                </button>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Lista Festività -->
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <div *ngIf="loading" class="text-center py-5">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Caricamento...</span>
-          </div>
-          <p class="mt-2 text-muted">Caricamento festività...</p>
         </div>
 
-        <div *ngIf="!loading && filteredHolidays.length === 0" class="alert alert-warning text-center">
-          <i class="bi bi-exclamation-triangle"></i>
-          Nessuna festività trovata per l'anno {{ filterYear }}
+        <!-- Filtro Anno -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Filtra per Anno:</label>
+                        <select class="form-select" [(ngModel)]="filterYear" (ngModelChange)="onYearChange()">
+                            <option *ngFor="let year of availableYears" [value]="year">{{ year }}</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="alert alert-info mb-0">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Totale festività {{ filterYear }}:</strong> {{ holidays.length }}
+                            <br>
+                            <small class="text-muted">
+                                Le festività ricorrenti vengono generate automaticamente se non presenti
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div *ngIf="!loading && filteredHolidays.length > 0" class="table-responsive">
-          <table class="table table-hover">
-            <thead class="table-light">
-              <tr>
-                <th>Data</th>
-                <th>Nome</th>
-                <th>Tipo</th>
-                <th>Ricorrente</th>
-                <th>Descrizione</th>
-                <th class="text-end">Azioni</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let holiday of filteredHolidays">
-                <td>
-                  <strong>{{ formatDisplayDate(holiday.date) }}</strong>
-                </td>
-                <td>
-                  <i class="bi bi-calendar-x me-2 text-danger"></i>
-                  {{ holiday.name }}
-                </td>
-                <td>
-                  <span [ngClass]="getTypeClass(holiday.type)">
-                    {{ holiday.typeDisplayName }}
+        <!-- Lista Festività -->
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div *ngIf="loading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Caricamento...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Caricamento festività per l'anno {{ filterYear }}...</p>
+                </div>
+
+                <div *ngIf="!loading && holidays.length === 0" class="alert alert-warning text-center">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Nessuna festività trovata per l'anno {{ filterYear }}
+                </div>
+
+                <div *ngIf="!loading && holidays.length > 0" class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Data</th>
+                            <th>Nome</th>
+                            <th>Tipo</th>
+                            <th>Ricorrente</th>
+                            <th>Descrizione</th>
+                            <th class="text-end">Azioni</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr *ngFor="let holiday of holidays">
+                            <td>
+                                <strong>{{ formatDisplayDate(holiday.date) }}</strong>
+                            </td>
+                            <td>
+                                <i class="bi bi-calendar-x me-2 text-danger"></i>
+                                {{ holiday.name }}
+                            </td>
+                            <td>
+                  <span class="badge {{ getTypeBadgeClass(holiday.type) }}">
+                    <i class="{{ getTypeIcon(holiday.type) }} me-1"></i>
+                      {{ holiday.typeDisplayName }}
                   </span>
-                </td>
-                <td>
-                  <i *ngIf="holiday.recurring" class="bi bi-arrow-repeat text-success" 
-                     title="Si ripete ogni anno"></i>
-                  <i *ngIf="!holiday.recurring" class="bi bi-dash text-muted"></i>
-                </td>
-                <td>
-                  <small class="text-muted">{{ holiday.description || '-' }}</small>
-                </td>
-                <td class="text-end">
-                  <button class="btn btn-sm btn-outline-primary me-2" 
-                          (click)="openEditModal(holiday)"
-                          title="Modifica">
-                    <i class="bi bi-pencil"></i>
-                  </button>
-                  <button class="btn btn-sm btn-outline-danger" 
-                          (click)="deleteHoliday(holiday)"
-                          title="Elimina">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                            </td>
+                            <td>
+                  <span *ngIf="holiday.recurring" class="badge bg-success">
+                    <i class="bi bi-arrow-repeat"></i>
+                    Ricorrente
+                  </span>
+                                <span *ngIf="!holiday.recurring" class="text-muted">
+                    -
+                  </span>
+                            </td>
+                            <td>
+                                <small class="text-muted">
+                                    {{ holiday.description || 'Nessuna descrizione' }}
+                                </small>
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-primary me-2"
+                                        (click)="openEditModal(holiday)"
+                                        title="Modifica">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger"
+                                        (click)="deleteHoliday(holiday)"
+                                        title="Elimina">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 </div>
 
 <!-- Modal Crea/Modifica Festività -->
 <ng-template #holidayModal let-modal>
-  <div class="modal-header">
-    <h5 class="modal-title">
-      <i class="bi" [ngClass]="isEditMode ? 'bi-pencil-square' : 'bi-plus-circle'"></i>
-      {{ isEditMode ? 'Modifica' : 'Aggiungi' }} Festività
-    </h5>
-    <button type="button" class="btn-close" (click)="closeModal()"></button>
-  </div>
-  <div class="modal-body">
-    <form>
-      <!-- Data -->
-      <div class="mb-3">
-        <label class="form-label fw-bold">Data *</label>
-        <input type="text"
-               class="form-control"
-               placeholder="Seleziona data"
-               ngbDatepicker
-               #d="ngbDatepicker"
-               [(ngModel)]="selectedDate"
-               (ngModelChange)="onDateSelect($event)"
-               name="date"
-               required />
-        <button class="btn btn-outline-secondary mt-2" (click)="d.toggle()" type="button">
-          <i class="bi bi-calendar3"></i> Apri Calendario
+    <div class="modal-header">
+        <h5 class="modal-title">
+            <i class="bi bi-calendar-plus"></i>
+            {{ isEditMode ? 'Modifica Festività' : 'Nuova Festività' }}
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+    </div>
+    <div class="modal-body">
+        <form>
+            <!-- Data -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Data *</label>
+                <div class="input-group">
+                    <input class="form-control"
+                           placeholder="yyyy-mm-dd"
+                           name="dp"
+                           [(ngModel)]="selectedDate"
+                           ngbDatepicker
+                           #d="ngbDatepicker"
+                           (dateSelect)="onDateSelect($event)"
+                           required />
+                    <button class="btn btn-outline-secondary" (click)="d.toggle()" type="button">
+                        <i class="bi bi-calendar3"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Nome -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Nome *</label>
+                <input type="text"
+                       class="form-control"
+                       [(ngModel)]="holidayForm.name"
+                       name="name"
+                       placeholder="Es. Natale, Chiusura estiva..."
+                       required />
+            </div>
+
+            <!-- Tipo -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Tipo *</label>
+                <select class="form-select" [(ngModel)]="holidayForm.type" name="type" required>
+                    <option *ngFor="let type of holidayTypes" [value]="type">
+                        {{ HolidayTypeLabels[type] }}
+                    </option>
+                </select>
+            </div>
+
+            <!-- Ricorrente -->
+            <div class="mb-3">
+                <div class="form-check">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           [(ngModel)]="holidayForm.recurring"
+                           name="recurring"
+                           id="recurringCheck" />
+                    <label class="form-check-label" for="recurringCheck">
+                        <strong>Ricorrente ogni anno</strong>
+                        <br>
+                        <small class="text-muted">Es. Natale, Capodanno, Ferragosto</small>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Descrizione -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Descrizione (opzionale)</label>
+                <textarea class="form-control"
+                          [(ngModel)]="holidayForm.description"
+                          name="description"
+                          rows="3"
+                          placeholder="Note aggiuntive..."></textarea>
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">
+            Annulla
         </button>
-      </div>
-
-      <!-- Nome -->
-      <div class="mb-3">
-        <label class="form-label fw-bold">Nome *</label>
-        <input type="text"
-               class="form-control"
-               [(ngModel)]="holidayForm.name"
-               name="name"
-               placeholder="es. Natale, Chiusura estiva..."
-               required />
-      </div>
-
-      <!-- Tipo -->
-      <div class="mb-3">
-        <label class="form-label fw-bold">Tipo *</label>
-        <select class="form-select" [(ngModel)]="holidayForm.type" name="type" required>
-          <option *ngFor="let type of holidayTypes" [value]="type">
-            {{ HolidayTypeLabels[type] }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Ricorrente -->
-      <div class="mb-3">
-        <div class="form-check">
-          <input class="form-check-input"
-                 type="checkbox"
-                 [(ngModel)]="holidayForm.recurring"
-                 name="recurring"
-                 id="recurringCheck" />
-          <label class="form-check-label" for="recurringCheck">
-            <strong>Ricorrente ogni anno</strong>
-            <br>
-            <small class="text-muted">Es. Natale, Capodanno, Ferragosto</small>
-          </label>
-        </div>
-      </div>
-
-      <!-- Descrizione -->
-      <div class="mb-3">
-        <label class="form-label fw-bold">Descrizione (opzionale)</label>
-        <textarea class="form-control"
-                  [(ngModel)]="holidayForm.description"
-                  name="description"
-                  rows="3"
-                  placeholder="Note aggiuntive..."></textarea>
-      </div>
-    </form>
-  </div>
-  <div class="modal-footer">
-    <button type="button" class="btn btn-secondary" (click)="closeModal()">
-      Annulla
-    </button>
-    <button type="button" class="btn btn-primary" (click)="saveHoliday()">
-      <i class="bi bi-check-circle"></i>
-      {{ isEditMode ? 'Salva Modifiche' : 'Crea Festività' }}
-    </button>
-  </div>
+        <button type="button" class="btn btn-primary" (click)="saveHoliday()">
+            <i class="bi bi-check-circle"></i>
+            {{ isEditMode ? 'Salva Modifiche' : 'Crea Festività' }}
+        </button>
+    </div>
 </ng-template>

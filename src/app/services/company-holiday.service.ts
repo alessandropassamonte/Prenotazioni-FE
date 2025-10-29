@@ -20,6 +20,14 @@ export class CompanyHolidayService {
     }
 
     /**
+     * Ottiene le festività per un anno specifico
+     * Il backend genera automaticamente le festività ricorrenti se mancanti
+     */
+    getHolidaysByYear(year: number): Observable<CompanyHoliday[]> {
+        return this.http.get<CompanyHoliday[]>(`${this.apiUrl}/year/${year}`);
+    }
+
+    /**
      * Ottiene festività in un range di date
      */
     getHolidaysBetween(startDate: string, endDate: string): Observable<CompanyHoliday[]> {
