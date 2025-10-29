@@ -10,14 +10,19 @@
           Sede di Roma, Lungotevere Arnaldo da Brescia 12, 00196
         </p>
         <div class="hero-actions">
-          <a routerLink="/booking" class="btn btn-primary btn-lg">
+          <a routerLink="/booking" *ngIf="authService.isAuthenticated && (currentUser?.role == 'USER')"  class="btn btn-primary btn-lg">
             <i class="bi bi-calendar-plus"></i>
             Prenota Ora
           </a>
-          <a routerLink="/my-bookings" class="btn btn-outline-light btn-lg">
+          <a routerLink="/my-bookings" *ngIf="authService.isAuthenticated && (currentUser?.role == 'USER')"  class="btn btn-outline-light btn-lg">
             <i class="bi bi-list-check"></i>
             Le Mie Prenotazioni
           </a>
+
+            <a routerLink="admin/holidays" *ngIf="authService.isAuthenticated && (currentUser?.role == 'ADMIN' || currentUser?.role == 'MANAGER' )" class="btn btn-outline-light btn-lg">
+                <i class="bi bi-person-badge"></i>
+                Amministrazione
+            </a>
         </div>
       </div>
     </div>
@@ -59,8 +64,11 @@
               <strong>Clicca sulla postazione</strong> che preferisci per prenotarla
             </li>
             <li>
-              <strong>Conferma la prenotazione</strong> e ricevi la conferma immediata
+              <strong>Conferma la prenotazione</strong>
             </li>
+              <li>
+                  <strong>Gestisci tutte le tue prenotazioni</strong>
+              </li>
           </ol>
         </div>
         <div class="col-md-6">

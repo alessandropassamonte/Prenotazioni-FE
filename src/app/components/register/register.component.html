@@ -7,7 +7,6 @@
                     <i class="bi bi-person-plus-fill"></i>
                     Crea il tuo Account
                 </h1>
-                <p class="hero-subtitle">Inizia a prenotare le tue postazioni oggi stesso</p>
             </div>
         </div>
     </div>
@@ -76,7 +75,7 @@
                                             formControlName="email"
                                             class="form-control"
                                             [class.is-invalid]="f['email'].invalid && f['email'].touched"
-                                            placeholder="nome@esempio.it"
+                                            placeholder="nome.cognome@eurobet.it"
                                     />
                                     <div class="invalid-feedback" *ngIf="f['email'].invalid && f['email'].touched">
                                         <span *ngIf="f['email'].errors?.['required']">L'email è obbligatoria</span>

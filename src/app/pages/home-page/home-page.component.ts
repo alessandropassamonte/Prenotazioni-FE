@@ -1,6 +1,9 @@
-import { Component } from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import {AuthService, User} from "../../services/auth.service";
+import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
+import {Subscription} from "rxjs";
 
 @Component({
   selector: 'app-home-page',
@@ -9,7 +12,25 @@ import { RouterModule } from '@angular/router';
   templateUrl: './home-page.component.html',
   styleUrls: ['./home-page.component.scss']
 })
-export class HomePageComponent {
+export class HomePageComponent implements OnInit, OnDestroy{
+
+    currentUser: User | null = null;
+    private userSubscription?: Subscription;
+
+    constructor(public authService: AuthService) {}
+
+    ngOnInit(): void {
+        // Sottoscrizione all'utente corrente
+        this.userSubscription = this.authService.currentUser.subscribe(
+            user => {
+                this.currentUser = user;
+            }
+        );
+    }
+    ngOnDestroy(): void {
+        this.userSubscription?.unsubscribe();
+    }
+
   features = [
     {
       icon: 'bi-map',
