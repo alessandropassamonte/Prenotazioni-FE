@@ -1,0 +1,81 @@
+.card {
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+  }
+}
+
+.card-title {
+  font-weight: 600;
+  color: #333;
+}
+
+// KPI Cards
+.card-body {
+  i.fs-1 {
+    font-size: 3rem !important;
+  }
+}
+
+// Progress bar custom
+.progress {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+// Table styles
+.table {
+  th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+  }
+  
+  .table-warning {
+    background-color: #fff3cd !important;
+  }
+}
+
+// Badge styles
+.badge {
+  font-weight: 500;
+  padding: 0.4em 0.8em;
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .card-body {
+    i.fs-1 {
+      font-size: 2rem !important;
+    }
+    
+    h2 {
+      font-size: 1.5rem;
+    }
+  }
+}
+
+// Chart containers
+canvas {
+  max-width: 100%;
+  height: auto !important;
+}
+
+// Loading spinner
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+// Alert styling
+.alert {
+  border-radius: 8px;
+  
+  i {
+    margin-right: 8px;
+  }
+}

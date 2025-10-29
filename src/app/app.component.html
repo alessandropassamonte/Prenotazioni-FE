@@ -35,6 +35,11 @@
                             Amministrazione
                         </a>
                     </li>
+                    <li class="nav-item" *ngIf="authService.isAuthenticated && (currentUser?.role == 'ADMIN' || currentUser?.role == 'MANAGER' )">
+                        <a class="nav-link" routerLink="/admin/occupancy-report" routerLinkActive="active">
+                            <i class="bi bi-graph-up"></i> Report Occupazione
+                        </a>
+                    </li>
 
                     <!-- User Dropdown (mostra solo se loggato) -->
                     <li class="nav-item dropdown" *ngIf="authService.isAuthenticated">

@@ -8,6 +8,7 @@ import { RegisterComponent } from './components/register/register.component';
 import { AuthGuard } from './guards/auth.guard';
 import { AdminGuard } from './guards/admin.guard';
 import {HolidaysAdminComponent} from "./components/holidays-admin/holidays-admin.component";
+import {OccupancyReportComponent} from "./components/occupancy-report/occupancy-report.component";
 
 export const routes: Routes = [
     // Route pubbliche (senza autenticazione)
@@ -48,6 +49,13 @@ export const routes: Routes = [
         component: HolidaysAdminComponent,
         title: 'Gestione Festività - Desk Booking System',
         canActivate: [AuthGuard, AdminGuard] // Solo ADMIN e MANAGER
+    },
+
+    {
+        path: 'admin/occupancy-report',
+        component: OccupancyReportComponent,
+        // Aggiungi guard per ADMIN/MANAGER se necessario
+        canActivate: [AdminGuard]
     },
 
     // Redirect 404
