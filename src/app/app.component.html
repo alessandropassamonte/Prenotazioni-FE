@@ -17,13 +17,13 @@
                             Home
                         </a>
                     </li>
-                    <li class="nav-item" *ngIf="authService.isAuthenticated">
+                    <li class="nav-item" *ngIf="authService.isAuthenticated && (currentUser?.role == 'USER')">
                         <a class="nav-link" routerLink="/booking" routerLinkActive="active">
                             <i class="bi bi-calendar-plus"></i>
                             Prenota
                         </a>
                     </li>
-                    <li class="nav-item" *ngIf="authService.isAuthenticated">
+                    <li class="nav-item" *ngIf="authService.isAuthenticated && (currentUser?.role == 'USER')">
                         <a class="nav-link" routerLink="/my-bookings" routerLinkActive="active">
                             <i class="bi bi-calendar-check"></i>
                             Le Mie Prenotazioni

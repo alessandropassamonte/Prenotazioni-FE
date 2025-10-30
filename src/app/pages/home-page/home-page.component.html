@@ -19,7 +19,7 @@
             Le Mie Prenotazioni
           </a>
 
-            <a routerLink="admin/holidays" *ngIf="authService.isAuthenticated && (currentUser?.role == 'ADMIN' || currentUser?.role == 'MANAGER' )" class="btn btn-outline-light btn-lg">
+            <a routerLink="/admin" *ngIf="authService.isAuthenticated && (currentUser?.role == 'ADMIN' || currentUser?.role == 'MANAGER' )" class="btn btn-outline-light btn-lg">
                 <i class="bi bi-person-badge"></i>
                 Amministrazione
             </a>

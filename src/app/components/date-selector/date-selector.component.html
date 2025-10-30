@@ -18,6 +18,7 @@
                                 [(ngModel)]="selectedDate"
                                 (ngModelChange)="onDateChange($event)"
                                 (click)="d.toggle()"
+                                readonly
                                 [minDate]="minDate"
                                 [maxDate]="maxDate"
                                 [markDisabled]="isDisabled"
